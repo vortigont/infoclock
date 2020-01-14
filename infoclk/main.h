@@ -69,7 +69,7 @@ void wotareq(AsyncWebServerRequest *request);	// Web OTA callbask
 void wotaupl(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 //void otaclient();                  		// try OTA Update
 void wcfgget(AsyncWebServerRequest *request);   // Web: Provide json encoded config data
-void wcfgset(AsyncWebServerRequest *request);   // Web: Update config in EEPROM
+void wcfgset(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);   // Web: Update config in EEPROM
 void wver(AsyncWebServerRequest *request);	// return json with device status & sw version
 
 

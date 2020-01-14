@@ -68,6 +68,7 @@ void setup() {
     #ifdef _CLKDEBUG_
 	Serial.begin(115200);	    // start hw serial for debugging
     #endif
+    _SPLN("Starting InfoClock...");
 
     EEPROMCfg::Load();	// Load config from EEPROM
     wifibegin(EEPROMCfg::getConfig());    // Enable WiFi
@@ -77,7 +78,7 @@ void setup() {
     //httpsrv.on("/ota",		wota);		// OTA firmware update
     httpsrv.on("/ver",		wver);		// version and status info
     httpsrv.on("/cfg", HTTP_GET,  wcfgget);	// get config (json)
-    httpsrv.on("/cfg", HTTP_POST, wcfgset);	// set config (json)
+    httpsrv.on("/cfg", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, wcfgset);	// set config (json)
     httpsrv.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGotaform);});	// Simple Firmware Update Form
     httpsrv.on("/update", HTTP_POST, wotareq, wotaupl);	// OTA firmware update
 
@@ -569,11 +570,10 @@ void espreboot() {
 /*  Webpage: Update config in EEPROM
  *  Use form-posted json object to update data in EEPROM
  */
-void wcfgset(AsyncWebServerRequest *request) {
-
+void wcfgset(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
   const size_t bufferSize = 2*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(7) + CFG_JSON_BUF_EXT;
   StaticJsonBuffer<bufferSize> buff;
-  JsonObject& jsoncfg = buff.parseObject(request->arg("plain"));
+  JsonObject& jsoncfg = buff.parseObject((const char*)data);
 
   if (!jsoncfg.success()) {
     request->send_P(500, FPSTR(PGmimejson), PGdre);   // return http-error if json is unparsable
@@ -581,8 +581,6 @@ void wcfgset(AsyncWebServerRequest *request) {
   }
   //jsoncfg.printTo(Serial); //Debug
 
-  //cfg conf;           // struct for config data
-  //cfgload(conf);      // Load config from EEPROM
   EEPROMCfg::Load();	// Load config from EEPROM
 
   snprintf(EEPROMCfg::setConfig().chostname, sizeof EEPROMCfg::getConfig().chostname, "%s", jsoncfg["wH"].as<const char*>());
@@ -603,14 +601,6 @@ void wcfgset(AsyncWebServerRequest *request) {
 
   EEPROMCfg::Save();    // Update EEPROM
   cfg2json(EEPROMCfg::getConfig(), request);   // return current config as serialised json
-/*
-  if (jsoncfg.containsKey("uA")) {
-      otaclient(jsoncfg["uU"].as<String>());	//Initiate OTA update
-  } else {                                      // there was a config update, so I need either do all the tasks to update setup
-	Task *t = new Task(0, TASK_ONCE, &espreboot, &ts, false);	// or reboot it all...
-	t->enableDelayed(UPD_RESTART_DELAY * TASK_SECOND);			// just give it some time to try new WiFi setup if required
-  }
-*/
 }
 
 
@@ -633,4 +623,3 @@ void wver(AsyncWebServerRequest *request) {
 
   request->send(200, FPSTR(PGmimejson), buff );
 }
-
