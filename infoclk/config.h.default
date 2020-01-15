@@ -1,11 +1,14 @@
 // Default options
 // rename this file to config.h and make your changes
 
+// firmware name
+#define FW_NAME "infoclock"
+
 // firmware version
-#define FW_VER "infoclk_1.2.0"
+// #define FW_VER ""
 
 // Enable debug messages via hw serail port0
-//#define _CLKDEBUG_
+// #define _CLKDEBUG_
 
 
 // Matrix setup

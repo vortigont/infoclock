@@ -50,6 +50,10 @@
 // PROGMEM strings
 #include "http.h"
 
+// Macro
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 // Defines
 #define HTTP_VER_BUFSIZE 150
 #define SENSOR_DATA_BUFSIZE 100 // chars for sensor data

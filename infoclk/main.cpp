@@ -625,7 +625,8 @@ void wver(AsyncWebServerRequest *request) {
 		ESP.getFlashChipSize(),
 		ESP.getCoreVersion().c_str(),
 		system_get_sdk_version(),
-		FPSTR(PGver),
+		FW_NAME,
+		TOSTRING(FW_VER),
 		ESP.getCpuFreqMHz(),
 		ESP.getFreeHeap(),
 		NTP.getUptime() );

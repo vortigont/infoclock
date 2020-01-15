@@ -1,9 +1,6 @@
 // HTTP-pages related stuff goes here
 
-
 #define CFG_JSON_BUF_EXT    180
-
-const char PROGMEM PGver[] = FW_VER;
 
 // content types
 const char PROGMEM PGmimetxt[]  = "text/plain";
@@ -11,7 +8,6 @@ const char PROGMEM PGmimehtml[] = "text/html";
 const char PROGMEM PGmimejson[] = "application/json";
 
 // HTTP responce messages
-const char PROGMEM PGsmpld[] = "Sampling disabled";
 const char PROGMEM PGdre[] = "Data read error";
 const char PROGMEM PGacao[] = "Access-Control-Allow-Origin";
 const char PROGMEM PGota[] = "OTA update in progress...";
@@ -21,7 +17,7 @@ const char PROGMEM PGotaform[] = "<form method='POST' action='/update' enctype='
 const char PROGMEM PGcfgjson[] = "{\"wH\":\"%s\",\"wM\":%u,\"wS\":\"%s\", \"uU\":\"%s\"}";
 
 // sprintf template for json version data
-const char PROGMEM PGverjson[] = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%lu,}";
+const char PROGMEM PGverjson[] = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%lu,}";
 
 
 // Index page with config form
