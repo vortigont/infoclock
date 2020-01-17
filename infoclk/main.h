@@ -44,6 +44,9 @@
 //#include <EnvironmentCalculations.h>
 #include <BME280I2C.h>       //https://github.com/finitespace/BME280
 
+//Si7021 secsor
+#include <HTU21D.h>
+
 // eeprom configuration class
 #include "EEPROMCfg.h"
 
@@ -58,6 +61,9 @@
 #define HTTP_VER_BUFSIZE 150
 #define SENSOR_DATA_BUFSIZE 100 // chars for sensor data
 #define UPD_RESTART_DELAY 15    // restart delay when updating firmware
+
+// progmem constants
+static const char PGwapireq[] PROGMEM = WAPI_REQURL;
 
 //void wifibegin(EEPROMCfg::getConfig());
 // callback functions
@@ -91,7 +97,9 @@ void bigClk ();				// Draw clock with big font
 void sectick(uint16_t x, uint16_t y);	// Draw seconds ticks
 
 // work with data sources
-void getsensordata(float& t, float& h, float& p, float& dew);	// retreive data from BME280 sensor
+void readbme280(float& t, float& h, float& p, float& dew);	// retreive data from BME280 sensor
+void readsi7021(float& t, float& h);	// retreive data from si7021 sensor
+
 void ParseWeather(String s);		// Parse response from weather server
 
 // recode UTF8 rus strings
@@ -101,3 +109,9 @@ String utf8rus(String source);
 
 
 template <typename T> void scroll( const T& str, int y, int& scrollptr);
+
+// sensors enum
+enum class sensor_t{NA, bme280, si7021};
+
+// PROGMEM text
+//const char PROGMEM PGsensorerr[] = "Temp/humididy sensor not found!";

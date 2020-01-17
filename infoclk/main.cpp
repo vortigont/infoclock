@@ -32,8 +32,9 @@ const unsigned char logo2 [] = {
 // Constructs
 Max72xxPanel matrix = Max72xxPanel(PIN_CS, MATRIX_W, MATRIX_H);
 
-// Sensor
+// Sensors
 BME280I2C bme;
+HTU21D s_si7021(HTU21D_RES_RH12_TEMP14);
 
 // Create an instance of the web-server
 //ESP8266WebServer httpsrv(80);
@@ -58,6 +59,7 @@ int strp1, strp2 = 0;
 
 // sensor data
 char sensstr[SENSOR_DATA_BUFSIZE];
+sensor_t sensor = sensor_t::NA;
 
 // String for weather info
 String tape = "Connecting to WiFi...";
@@ -117,10 +119,17 @@ void setup() {
     //writestep(); matrix.fillScreen(LOW);
 
     Wire.begin();
-    if (!bme.begin()) {
-	ts.deleteTask(tSensorUpd);
-	snprintf(sensstr, sizeof sensstr, "BME280 temp/huminidy sensor not found!");
-	_SPLN(sensstr);
+    if (bme.begin()) {
+      sensor = sensor_t::bme280;
+    } else if(s_si7021.begin())  {
+      sensor = sensor_t::si7021;
+    }
+
+    if (sensor == sensor_t::NA) {
+        ts.deleteTask(tSensorUpd);
+        snprintf_P(sensstr, sizeof sensstr, PSTR("Temp/humididy sensor not found!"));
+        //snprintf(sensstr, FPSTR("Temp/humididy sensor not found!"));
+        _SPLN(sensstr);
     } else {
     	tSensorUpd.enable();
     }
@@ -228,29 +237,35 @@ void clearticks() {
 // Update string with sensor's data
 void updsensstr() {
 	float temp, pressure, humidity, dew = NAN;
-	getsensordata(temp, humidity, pressure, dew);
-	snprintf(sensstr, sizeof sensstr, "T:%.1f H:%.f%% P:%.fmmHg", temp, humidity, pressure);
+  switch(sensor) {
+    case sensor_t::bme280 :	readbme280(temp, humidity, pressure, dew);
+                            break;
+                            snprintf_P(sensstr, sizeof sensstr, PSTR("T:%.1f H:%.f%% P:%.fmmHg"), temp, humidity, pressure);
+    case sensor_t::si7021 : readsi7021(temp, humidity);
+                            snprintf(sensstr, sizeof sensstr, "T:%.1f H:%.f%%", temp, humidity);
+                            break;
+  }
 	_SPLN(sensstr);		//debug, print data to serial
 }
 
-void getsensordata(float& t, float& h, float& p, float& dew) {
-
+void readbme280(float& t, float& h, float& p, float& dew) {
    BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
    BME280::PresUnit presUnit(BME280::PresUnit_torr);
-
     bme.read(p, t, h, tempUnit, presUnit);
-
     //EnvironmentCalculations::TempUnit     envTempUnit =  EnvironmentCalculations::TempUnit_Celsius;
     //dew = EnvironmentCalculations::DewPoint(t, h, envTempUnit);
 }
 
+void readsi7021(float& t, float& h) {
+  h = s_si7021.readHumidity();
+  t = s_si7021.readTemperature(SI70xx_TEMP_READ_AFTER_RH_MEASURMENT);
+}
 // update weather info via http req
 void GetWeather(){
     WiFiClient tcpclient;
     HTTPClient httpreq;
-    String url = WAPI_REQURL;
     _SPLN(url);
-    if (httpreq.begin(tcpclient, url)){
+    if (httpreq.begin(tcpclient, FPSTR(PGwapireq))){
 	int httpCode = httpreq.GET();
 	if( httpCode == HTTP_CODE_OK ){
 		String respdata = httpreq.getString();

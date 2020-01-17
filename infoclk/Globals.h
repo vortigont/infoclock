@@ -43,8 +43,6 @@
   #define _SPTO(a)
 #endif
 
-
-
 /*
 class Globals {
 public:
