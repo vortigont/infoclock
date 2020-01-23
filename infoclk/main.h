@@ -107,6 +107,8 @@ void ParseWeather(String s);		// Parse response from weather server
 String utf8toCP1251(String source);
 String utf8rus(String source);
 
+// reboot esp with a delay
+void espreboot(void);
 
 template <typename T> void scroll( const T& str, int y, int& scrollptr);
 

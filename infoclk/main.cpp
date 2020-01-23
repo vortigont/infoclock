@@ -83,6 +83,7 @@ void setup() {
     httpsrv.on("/cfg", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, wcfgset);	// set config (json)
     httpsrv.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGotaform);});	// Simple Firmware Update Form
     httpsrv.on("/update", HTTP_POST, wotareq, wotaupl);	// OTA firmware update
+    httpsrv.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimetxt), "Reboot in UPD_RESTART_DELAY"); espreboot();});
 
   // rotate pane 90 cw
   #ifdef MATRIX_PANEROT
@@ -516,6 +517,7 @@ void cfg2json(const cfg &conf, AsyncWebServerRequest *request) {
   request->send(200, FPSTR(PGmimejson), buff );
 }
 
+
 /*  Webpage: Provide json encoded config data
  *  Get data from EEPROM and return it in via json
  */
@@ -546,14 +548,15 @@ void wotaupl(AsyncWebServerRequest *request, String filename, size_t index, uint
     }
     if(final){
       if(Update.end(true)){
-	_SPF("Update Success: %uB, rebooting ESP\n", index+len);
-	Task *t = new Task(0, TASK_ONCE, [](){ESP.restart();}, &ts, false);
-	t->enableDelayed(UPD_RESTART_DELAY * TASK_SECOND);
+	       _SPF("Update Success: %uB, rebooting ESP\n", index+len);
+         espreboot();
       } else {
         _SPTO(Update.printError(Serial));
       }
     }
 };
+
+
 
 /*
 // try OTA Update
@@ -572,15 +575,11 @@ void wota(AsyncWebServerRequest *request) {
 */
 
 
-
-
-/*
-// dumb func for timer
+// reboot esp task
 void espreboot() {
-  _SPLN("Reboot initiated");
-  ESP.restart();
+  	Task *t = new Task(0, TASK_ONCE, [](){ESP.restart();}, &ts, false);
+    t->enableDelayed(UPD_RESTART_DELAY * TASK_SECOND);
 }
-*/
 
 /*  Webpage: Update config in EEPROM
  *  Use form-posted json object to update data in EEPROM
