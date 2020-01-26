@@ -17,9 +17,6 @@
 #include "Globals.h"
 
 // Libs
-//#include <ESP8266WiFi.h>
-//#include <ESP8266WebServer.h>
-//#include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 // esp8266 OTA Updates
 #include <ESP8266HTTPClient.h>
@@ -30,8 +27,14 @@
 #include <TaskSchedulerDeclarations.h>
 
 // NTP time
-//#include <TimeLib.h>
-#include <NtpClientLib.h>
+#include <TZ.h>
+#include <time.h>                       // time() ctime()
+#include <sys/time.h>                   // struct timeval
+#include <sntp.h>
+extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
+
+// NTP Options
+#define NTP_SERVER COUNTRY ".pool.ntp.org"
 
 // Adafruit_GFX
 #include <Adafruit_GFX.h>	// need to override bundled "glcdfont.c" font with rus version
@@ -50,22 +53,22 @@
 // eeprom configuration class
 #include "EEPROMCfg.h"
 
-// PROGMEM strings
-#include "http.h"
-
 // Macro
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
 // Defines
-#define HTTP_VER_BUFSIZE 150
+#define HTTP_VER_BUFSIZE 200
 #define SENSOR_DATA_BUFSIZE 100 // chars for sensor data
 #define UPD_RESTART_DELAY 15    // restart delay when updating firmware
 
-// progmem constants
-static const char PGwapireq[] PROGMEM = WAPI_REQURL;
+// PROGMEM strings
+#include "http.h"
+// sprintf template for json version data
+static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%lu,}";
+// weather API URL
+static const char PGwapireq[] PROGMEM = WAPI_URL "?id=" WAPI_KEY "&units=metric&lang=" COUNTRY "&APPID=" WAPI_KEY;
 
-//void wifibegin(EEPROMCfg::getConfig());
 // callback functions
 void wifibegin(const cfg &conf);   // Initialize WiFi
 
@@ -114,6 +117,3 @@ template <typename T> void scroll( const T& str, int y, int& scrollptr);
 
 // sensors enum
 enum class sensor_t{NA, bme280, si7021};
-
-// PROGMEM text
-//const char PROGMEM PGsensorerr[] = "Temp/humididy sensor not found!";

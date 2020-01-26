@@ -16,10 +16,6 @@ const char PROGMEM PGotaform[] = "<form method='POST' action='/update' enctype='
 // sprintf template for json config data
 const char PROGMEM PGcfgjson[] = "{\"wH\":\"%s\",\"wM\":%u,\"wS\":\"%s\", \"uU\":\"%s\"}";
 
-// sprintf template for json version data
-const char PROGMEM PGverjson[] = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%lu,}";
-
-
 // Index page with config form
 // (this is a minimized version)
 const char PROGMEM PGindex[] = R"===(

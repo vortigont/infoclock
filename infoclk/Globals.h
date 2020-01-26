@@ -31,7 +31,7 @@
 // ========= Defines
 
 // Enable Serial.print if DEBUG
-#ifdef _CLKDEBUG_
+#ifdef _FWDEBUG_
   #define _SP(a) Serial.print(a);
   #define _SPLN(a) Serial.println(a);
   #define _SPF(a,b) Serial.printf(a,b);

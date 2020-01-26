@@ -8,7 +8,7 @@
 // #define FW_VER ""
 
 // Enable debug messages via hw serail port0
-// #define _CLKDEBUG_
+// #define _FWDEBUG_
 
 
 // Matrix setup
@@ -23,23 +23,16 @@
 #define WIFI_DEF_HOSTNAME "infoclk"
 
 // WiFi self AP-mode default password (15 chars max)
-#define WIFI_DEF_PASSWD "infoclk"
+#define WIFI_DEF_PASSWD "infoclock"
 
 
 // NTP Options
-#define NTP_SERVER  "192.168.168.2"
-#define NTP_INTERVAL  3600
-
-// TimeZone offset in hours
-#define TZ 3
-// daylight saving
-#define TZ_DL false
-
+#define TZONE TZ_Europe_Moscow
+#define COUNTRY "ru"
 
 // OTA updates options
 #define OTA_URL "http://emil-nb/esp/infoclk.bin"
-#define OTA_VER FW_VER
-// curl -v -X POST http://infoclk/update -F 'name=@.pioenvs/stable/firmware.bin'
+// curl -v -X POST http://infoclk/update -F 'name=@.pio/build/stable/firmware.bin'
 
 // BME Sensor setup
 #define PRESSURE_UNITS 5        // unit: B001 = hPa, B010 = inHg, 5 = mmHg
@@ -51,8 +44,7 @@
 #define WAPI_KEY 12345
 #define WAPI_CITY_ID 519690	// Санкт-Петербург
 #define WAPI_CITY_NAME "В СпБ "	// Короткое имя для дисплея
-
-#define WAPI_REQ "WAPI_URL?id=WAPI_CITY_ID&units=metric&lang=ru&APPID=WAPI_KEY"
+//API url format "WAPI_URL?id=WAPI_CITY_ID&units=metric&lang=ru&APPID=WAPI_KEY"
 
 #define WEATHER_UPD_PERIOD 2	// weather update (hours)
 #define WEATHER_UPD_RETRY 10	// weather update retry if http error (minutes)

@@ -51,7 +51,8 @@ Task tSecondsPulse(TASK_SECOND, TASK_FOREVER, &doSeconds, &ts, false);
 // Draw pulsing ticks every second
 Task tDrawTicks(TICKS_TIME, TASK_ONCE, NULL, &ts, false, &drawticks, &clearticks);
 
-int lastmin = 0;
+static time_t now;
+uint8_t lastmin = 0;
 bool wscroll = 0;	// do weather scroll
 
 // scroll y pointers
@@ -73,6 +74,10 @@ void setup() {
     _SPLN("Starting InfoClock...");
 
     EEPROMCfg::Load();	// Load config from EEPROM
+
+    // set ntp opts
+    configTime(TZONE, NTP_SERVER);
+
     wifibegin(EEPROMCfg::getConfig());    // Enable WiFi
 
     //Define server "pages"
@@ -174,28 +179,18 @@ template <typename T> void mtxprint( const T& str, uint16_t x, uint16_t y) {
 // callback function for every second pulse task (tSecondsPulse)
 void doSeconds() {
 	// update clock display every new minute
-        if ( minute() != lastmin ) {
-            matrix.setIntensity(brightness_calc());	// set screen brightness
-            wscroll = brightness_calc();		// disable weather scroll at nights
-            matrix.fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
-            bigClk(); //simpleclk();
-            lastmin = minute();
-        }
+  now = time(nullptr);
+  if ( localtime(&now)->tm_min != lastmin ) {
+    matrix.setIntensity(brightness_calc());	// set screen brightness
+    wscroll = brightness_calc();		// disable weather scroll at nights
+    matrix.fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
+    bigClk(); //simpleclk();
+    lastmin = localtime(&now)->tm_min;
+  }
 
-	tDrawTicks.restartDelayed();	//run task that draws one pulse of a ticks
-	_SP(NTP.getDateStr()); _SP(" "); _SPLN(NTP.getTimeStr());	// print date/time to serial if debug
+	tDrawTicks.restartDelayed();   //run task that draws one pulse of a ticks
+	_SP(ctime(&now));              // print date/time to serial if debug
 }
-
-
-//print normal clock
-void simpleclk() {
-    matrix.setFont();
-    matrix.fillRect(0, 16, matrix.width(), 8, 0);
-    matrix.setCursor(0, 16);
-    matrix.print(NTP.getTimeStr());
-    matrix.write();
-}
-
 
 // print big font clock
 void bigClk () {
@@ -203,9 +198,9 @@ void bigClk () {
     matrix.fillRect(0, 0, matrix.width(), CLK_FONT_HEIGHT, 0);
 
     char buf[3];
-    sprintf(buf, "%2d", hour());
+    sprintf(buf, "%2d", localtime(&now)->tm_hour);
     mtxprint(buf, 0, CLK_FONT_OFFSET_Y);
-    sprintf(buf, "%02d", minute());
+    sprintf(buf, "%02d", localtime(&now)->tm_min);
     mtxprint(buf, CLK_MINUTE_OFFSET_X, CLK_FONT_OFFSET_Y);
 }
 
@@ -325,7 +320,7 @@ void ParseWeather(String s){
 
 // calculate brightness for the hour
 uint8_t brightness_calc(void){
-	uint8_t hr = hour();
+	uint8_t hr = localtime(&now)->tm_hour;
 	if (hr>=MAX_BRT_HOUR_START && hr<MAX_BRT_HOUR_END)
 		return MAX_BRIGHTNESS;
 
@@ -357,11 +352,7 @@ void onSTAGotIP(WiFiEventStationModeGotIP ipInfo) {
   _SPLN(WiFi.localIP());
   WiFi.mode(WIFI_STA);        // Shutdown internal Access Point
 
-  NTP.begin(NTP_SERVER, TZ, TZ_DL); // Start NTP only after IP network is connected
-  NTP.setInterval(NTP_INTERVAL);
-
-  // Start the Web-server
-  //httpsrv.begin();
+  sntp_init();
 
   //start weather updates
   tWeatherUpd.enableDelayed(5 * TASK_SECOND);
@@ -369,10 +360,10 @@ void onSTAGotIP(WiFiEventStationModeGotIP ipInfo) {
 
 // Manage network disconnection
 void onSTADisconnected(WiFiEventStationModeDisconnected event_info) {
-    WiFi.mode(WIFI_AP_STA);	// Enable internal AP if station connection is lost
-    NTP.stop();			// NTP sync can be disabled to avoid sync errors
-	// disabe weather update
-	tWeatherUpd.disable();
+    WiFi.mode(WIFI_AP_STA);   // Enable internal AP if station connection is lost
+    sntp_stop();              // NTP sync can be disabled while not connected
+    // disabe weather update
+	  tWeatherUpd.disable();
 }
 
 
@@ -623,6 +614,8 @@ void wver(AsyncWebServerRequest *request) {
   char buff[HTTP_VER_BUFSIZE];
   //char* firmware = (char*) malloc(strlen_P(PGver)+1);
   //strcpy_P(firmware, PGver);
+  timespec tp;
+  clock_gettime(0, &tp);
 
   snprintf_P(buff, sizeof(buff), PGverjson,
 		ESP.getChipId(),
@@ -633,7 +626,7 @@ void wver(AsyncWebServerRequest *request) {
 		TOSTRING(FW_VER),
 		ESP.getCpuFreqMHz(),
 		ESP.getFreeHeap(),
-		NTP.getUptime() );
+    (uint32_t)tp.tv_sec);
 
   request->send(200, FPSTR(PGmimejson), buff );
 }
