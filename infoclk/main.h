@@ -40,16 +40,6 @@ extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 #include <Adafruit_GFX.h>	// need to override bundled "glcdfont.c" font with rus version
 #include <Max72xxPanel.h>
 
-// i2c lib
-#include <Wire.h>
-
-//Baro sensor
-//#include <EnvironmentCalculations.h>
-#include <BME280I2C.h>       //https://github.com/finitespace/BME280
-
-//Si7021 secsor
-#include <HTU21D.h>
-
 // eeprom configuration class
 #include "EEPROMCfg.h"
 
@@ -59,15 +49,18 @@ extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 // Defines
 #define HTTP_VER_BUFSIZE 200
-#define SENSOR_DATA_BUFSIZE 100 // chars for sensor data
-#define UPD_RESTART_DELAY 15    // restart delay when updating firmware
+#define WEATHER_INIT_DELAY 20   // seconds to delay weather update after WiFi connection 
+
+#define UPD_RESTART_DELAY   5   // restart delay when updating firmware
+
+#define BAUD_RATE	115200	// serial debug port baud rate
 
 // PROGMEM strings
 #include "http.h"
 // sprintf template for json version data
 static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%lu,}";
 // weather API URL
-static const char PGwapireq[] PROGMEM = WAPI_URL "?id=" WAPI_KEY "&units=metric&lang=" COUNTRY "&APPID=" WAPI_KEY;
+static const char PGwapireq[] PROGMEM = WAPI_URL "?id=" WAPI_CITY_ID "&units=metric&lang=" COUNTRY "&APPID=" WAPI_KEY;
 
 // callback functions
 void wifibegin(const cfg &conf);   // Initialize WiFi
@@ -80,6 +73,8 @@ void wotaupl(AsyncWebServerRequest *request, String filename, size_t index, uint
 void wcfgget(AsyncWebServerRequest *request);   // Web: Provide json encoded config data
 void wcfgset(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);   // Web: Update config in EEPROM
 void wver(AsyncWebServerRequest *request);	// return json with device status & sw version
+void wf1(AsyncWebServerRequest *request);
+void wf2(AsyncWebServerRequest *request);
 
 
 // TaskScheduler
@@ -114,6 +109,3 @@ String utf8rus(String source);
 void espreboot(void);
 
 template <typename T> void scroll( const T& str, int y, int& scrollptr);
-
-// sensors enum
-enum class sensor_t{NA, bme280, si7021};

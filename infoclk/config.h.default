@@ -27,8 +27,8 @@
 
 
 // NTP Options
-#define TZONE TZ_Europe_Moscow
-#define COUNTRY "ru"
++#define TZONE TZ_Europe_Moscow // Zones defined in cores/esp8266/TZ.h
++#define COUNTRY "ru"           // Country double-letter code
 
 // OTA updates options
 #define OTA_URL "http://emil-nb/esp/infoclk.bin"

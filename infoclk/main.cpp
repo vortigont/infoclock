@@ -8,12 +8,7 @@
 #include "Globals.h"
 #include "main.h"
 #include "EEPROMCfg.h"
-
-//#include <WiFi.h>
-//#include <AsyncTCP.h>
-//#include <ESPAsyncWebServer.h>
-// HTTP related def's
-//#include "http.h"
+#include "sensors.h"
 
 //#include <Fonts/FreeSans9pt7b.h>	//good plain
 //#include <Fonts/FreeSansBold9pt7b.h>	// good but too bold
@@ -22,19 +17,13 @@
 
 #include "mfFbsd8x16monoGFX.h"
 
-const unsigned char wifi_icon [] = {0x07, 0xfb, 0xfd, 0x1e, 0xee, 0xf6, 0x36, 0xb6 };
-const unsigned char logo2 [] = {
-0xff, 0xff, 0xdf, 0xfd, 0xcf, 0xf9, 0xc7, 0xf1, 0xc0, 0x01, 0xe0, 0x03, 0xe0, 0x03, 0xc2, 0x11,
-0xc7, 0x39, 0xc2, 0x11, 0x80, 0x01, 0x00, 0xc1, 0x00, 0x03, 0x00, 0x03, 0x00, 0x07, 0x00, 0x0f };
-
-
 // ----
 // Constructs
 Max72xxPanel matrix = Max72xxPanel(PIN_CS, MATRIX_W, MATRIX_H);
 
 // Sensors
-BME280I2C bme;
-HTU21D s_si7021(HTU21D_RES_RH12_TEMP14);
+char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
+Sensors clksensor;    // sensor object
 
 // Create an instance of the web-server
 //ESP8266WebServer httpsrv(80);
@@ -58,37 +47,38 @@ bool wscroll = 0;	// do weather scroll
 // scroll y pointers
 int strp1, strp2 = 0;
 
-// sensor data
-char sensstr[SENSOR_DATA_BUFSIZE];
-sensor_t sensor = sensor_t::NA;
-
 // String for weather info
 String tape = "Connecting to WiFi...";
 
 // ----
 // MAIN Setup
 void setup() {
-    #ifdef _CLKDEBUG_
-	Serial.begin(115200);	    // start hw serial for debugging
-    #endif
+    _SPTO(Serial.begin(BAUD_RATE));	    // start hw serial for debugging
     _SPLN("Starting InfoClock...");
 
-    EEPROMCfg::Load();	// Load config from EEPROM
+  EEPROMCfg::Load();	// Load config from EEPROM
 
-    // set ntp opts
-    configTime(TZONE, NTP_SERVER);
+  // set ntp opts
+  configTime(TZONE, NTP_SERVER);
 
-    wifibegin(EEPROMCfg::getConfig());    // Enable WiFi
+  wifibegin(EEPROMCfg::getConfig());    // Enable WiFi
 
-    //Define server "pages"
-    httpsrv.onNotFound( [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGindex);});  //return index for non-ex pages
-    //httpsrv.on("/ota",		wota);		// OTA firmware update
-    httpsrv.on("/ver",		wver);		// version and status info
-    httpsrv.on("/cfg", HTTP_GET,  wcfgget);	// get config (json)
-    httpsrv.on("/cfg", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, wcfgset);	// set config (json)
-    httpsrv.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGotaform);});	// Simple Firmware Update Form
-    httpsrv.on("/update", HTTP_POST, wotareq, wotaupl);	// OTA firmware update
-    httpsrv.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimetxt), "Reboot in UPD_RESTART_DELAY"); espreboot();});
+  //Define server "pages"
+  httpsrv.onNotFound( [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGindex);});  //return index for non-ex pages
+  //httpsrv.on("/ota",		wota);		// OTA firmware update
+  httpsrv.on("/ver",		wver);		// version and status info
+  httpsrv.on("/cfg", HTTP_GET,  wcfgget);	// get config (json)
+  httpsrv.on("/cfg", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, wcfgset);	// set config (json)
+  httpsrv.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGotaform);});	// Simple Firmware Update Form
+  httpsrv.on("/update", HTTP_POST, wotareq, wotaupl);	// OTA firmware update
+  httpsrv.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimetxt), "Reboot in UPD_RESTART_DELAY"); espreboot();});
+  httpsrv.on("/f1",		wf1);		// fix1
+  httpsrv.on("/f2",		wf2);		// fix2
+
+   // Set matrix rotations
+   for ( uint8_t i = 0;  i < MATRIX_W*MATRIX_H;  i++ ) {
+        matrix.setRotation(i, MATRIX_ROTATION);
+   }
 
   // rotate pane 90 cw
   #ifdef MATRIX_PANEROT
@@ -111,33 +101,38 @@ void setup() {
   matrix.setPosition(15, 3, 0); // The last display is at <3, 0>
   #endif // MATRIX_PANEROT
 
-   // Set matrix rotations
-   for ( uint8_t i = 0;  i < MATRIX_W*MATRIX_H;  i++ ) {
-        matrix.setRotation(i, MATRIX_ROTATION);
-   }
+
+  // Make pane Zig-Zag with normal orientation
+  #ifdef MATRIX_ZIGZAG
+  // modules position (n,x,y) x,y(0,0) is from the top left corner of the pane
+  matrix.setPosition(0, 3, 0); matrix.setRotation(0,3);
+  matrix.setPosition(1, 2, 0); matrix.setRotation(1,3);
+  matrix.setPosition(2, 1, 0); matrix.setRotation(2,3);
+  matrix.setPosition(3, 0, 0); matrix.setRotation(3,3);
+  matrix.setPosition(4, 0, 1);
+  matrix.setPosition(5, 1, 1);
+  matrix.setPosition(6, 2, 1);
+  matrix.setPosition(7, 3, 1);
+  matrix.setPosition(8, 3, 2); matrix.setRotation(8,3);
+  matrix.setPosition(9, 2, 2); matrix.setRotation(9,3);
+  matrix.setPosition(10, 1, 2); matrix.setRotation(10,3);
+  matrix.setPosition(11, 0, 2); matrix.setRotation(11,3);
+  matrix.setPosition(12, 0, 3);
+  matrix.setPosition(13, 1, 3);
+  matrix.setPosition(14, 2, 3);
+  matrix.setPosition(15, 3, 3); // The last display is at <3, 3>
+  #endif
 
     //matrix.setFont(&TomThumb);
     //matrix.setFont(&FreeMono9pt7b);
     matrix.setTextWrap(false);
-    //matrix.setIntensity(7);
     //matrix.fillScreen(LOW);
-    matrix.drawBitmap(0, 0, wifi_icon, 16, 16, 0, 1);
-    //writestep(); matrix.fillScreen(LOW);
 
-    Wire.begin();
-    if (bme.begin()) {
-      sensor = sensor_t::bme280;
-    } else if(s_si7021.begin())  {
-      sensor = sensor_t::si7021;
-    }
-
-    if (sensor == sensor_t::NA) {
+    if (clksensor.begin() == sensor_t::NA) {
         ts.deleteTask(tSensorUpd);
-        snprintf_P(sensstr, sizeof sensstr, PSTR("Temp/humididy sensor not found!"));
-        //snprintf(sensstr, FPSTR("Temp/humididy sensor not found!"));
-        _SPLN(sensstr);
+        updsensstr();
     } else {
-    	tSensorUpd.enable();
+    	tSensorUpd.enableDelayed();
     }
 
     // Start the Web-server
@@ -176,20 +171,52 @@ template <typename T> void mtxprint( const T& str, uint16_t x, uint16_t y) {
     matrix.write();
 }
 
+// template for display text scroller
+template <typename T> void scroll( const T& str, int y, int& scrollptr) {
+
+	int16_t  x1, y1;
+	uint16_t w, h;
+	matrix.setFont();
+
+	matrix.getTextBounds(str, 0, y, &x1, &y1, &w, &h);
+	//_SP("Text: "); _SP(w); _SP("x"); _SPLN(h);
+	//_SP("Matrix: "); _SP(matrix.width()); _SP("x"); _SPLN(matrix.height());
+
+	if ( scrollptr < -1*w )		// reset scroll pointer when text moves out of pane
+		scrollptr = matrix.width();
+
+	matrix.fillRect(0, y, matrix.width(), y+8, 0);	// blank 1 row of 8x8 modules
+	matrix.setCursor(scrollptr--,y);
+	matrix.print(str);
+	matrix.write();
+}
+
 // callback function for every second pulse task (tSecondsPulse)
 void doSeconds() {
 	// update clock display every new minute
-  now = time(nullptr);
+  time(&now);
   if ( localtime(&now)->tm_min != lastmin ) {
-    matrix.setIntensity(brightness_calc());	// set screen brightness
-    wscroll = brightness_calc();		// disable weather scroll at nights
+    //matrix.shutdown(true);    // attempt to mitigate random garbage at specific modules
+    uint8_t _brt = brightness_calc();
+    matrix.setIntensity(_brt);	// set screen brightness
+    wscroll = (bool)_brt;		// disable weather scroll at nights
     matrix.fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
-    bigClk(); //simpleclk();
+    //matrix.shutdown(false);    // attempt to mitigate random garbage at specific modules
+    bigClk();                  //simpleclk();   print time on screen
     lastmin = localtime(&now)->tm_min;
+  	_SP(ctime(&now));              // print date/time to serial if debug
+
+    if (wscroll){
+      tScroller.enableIfNot();
+    } else {
+      tScroller.disable();
+     	matrix.setFont();
+      mtxprint(sensorstr, 0, STR_SENSOR_OFFSET_Y);
+    }
+
   }
 
 	tDrawTicks.restartDelayed();   //run task that draws one pulse of a ticks
-	_SP(ctime(&now));              // print date/time to serial if debug
 }
 
 // print big font clock
@@ -230,51 +257,35 @@ void clearticks() {
 	matrix.write();
 }
 
-// Update string with sensor's data
-void updsensstr() {
-	float temp, pressure, humidity, dew = NAN;
-  switch(sensor) {
-    case sensor_t::bme280 :	readbme280(temp, humidity, pressure, dew);
-                            break;
-                            snprintf_P(sensstr, sizeof sensstr, PSTR("T:%.1f H:%.f%% P:%.fmmHg"), temp, humidity, pressure);
-    case sensor_t::si7021 : readsi7021(temp, humidity);
-                            snprintf(sensstr, sizeof sensstr, "T:%.1f H:%.f%%", temp, humidity);
-                            break;
-  }
-	_SPLN(sensstr);		//debug, print data to serial
-}
-
-void readbme280(float& t, float& h, float& p, float& dew) {
-   BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
-   BME280::PresUnit presUnit(BME280::PresUnit_torr);
-    bme.read(p, t, h, tempUnit, presUnit);
-    //EnvironmentCalculations::TempUnit     envTempUnit =  EnvironmentCalculations::TempUnit_Celsius;
-    //dew = EnvironmentCalculations::DewPoint(t, h, envTempUnit);
-}
-
-void readsi7021(float& t, float& h) {
-  h = s_si7021.readHumidity();
-  t = s_si7021.readTemperature(SI70xx_TEMP_READ_AFTER_RH_MEASURMENT);
-}
 // update weather info via http req
 void GetWeather(){
+
+  if (!wscroll) // exit if weather string is not scrolling
+    return;
+
     WiFiClient tcpclient;
     HTTPClient httpreq;
-    _SPLN(url);
-    if (httpreq.begin(tcpclient, FPSTR(PGwapireq))){
+    _SP(F("Updating weather via: ")); _SPLN(FPSTR(PGwapireq));
+  if (httpreq.begin(tcpclient, FPSTR(PGwapireq))){
 	int httpCode = httpreq.GET();
 	if( httpCode == HTTP_CODE_OK ){
 		String respdata = httpreq.getString();
 		ParseWeather(respdata);
 		tWeatherUpd.setInterval(WEATHER_UPD_PERIOD * TASK_HOUR);
 	} else {
+		_SP("Weather update code: ");
+		_SPLN(httpCode);
 		tWeatherUpd.setInterval(WEATHER_UPD_RETRY * TASK_MINUTE);
 	}
-    }
+  }
     httpreq.end();
     tcpclient.stop();
 }
 
+void updsensstr(){
+    clksensor.getFormattedValues( sensorstr );
+    _SPLN(sensorstr);
+}
 
 // получить строку для дисплея из json-ответа
 void ParseWeather(String s){
@@ -337,7 +348,7 @@ uint8_t brightness_calc(void){
 
 // scroll text on a pane
 void panescroller(void){
-	scroll(sensstr, STR_SENSOR_OFFSET_Y, strp1);
+	scroll(sensorstr, STR_SENSOR_OFFSET_Y, strp1);
 	if ( wscroll ) scroll(tape, STR_WEATHER_OFFSET_Y, strp2);
 }
 
@@ -348,14 +359,15 @@ void panescroller(void){
 // WiFi connection callback
 void onSTAGotIP(WiFiEventStationModeGotIP ipInfo) {
 
-  _SP("WiFi connected, ip:");
-  _SPLN(WiFi.localIP());
+   tape = "WiFi ip:";
+   tape += WiFi.localIP().toString();
+   _SPLN(tape);
   WiFi.mode(WIFI_STA);        // Shutdown internal Access Point
 
   sntp_init();
 
   //start weather updates
-  tWeatherUpd.enableDelayed(5 * TASK_SECOND);
+  tWeatherUpd.enableDelayed(WEATHER_INIT_DELAY * TASK_SECOND);
 }
 
 // Manage network disconnection
@@ -477,26 +489,6 @@ String utf8rus(String source)
 return target;
 }
 
-// template for display text scroller
-template <typename T> void scroll( const T& str, int y, int& scrollptr) {
-
-	int16_t  x1, y1;
-	uint16_t w, h;
-	matrix.setFont();
-
-	matrix.getTextBounds(str, 0, y, &x1, &y1, &w, &h);
-	//_SP("Text: "); _SP(w); _SP("x"); _SPLN(h);
-	//_SP("Matrix: "); _SP(matrix.width()); _SP("x"); _SPLN(matrix.height());
-
-	if ( scrollptr < -1*w )		// reset scroll pointer when text moves out of pane
-		scrollptr = matrix.width();
-
-	matrix.fillRect(0, y, matrix.width(), y+8, 0);	// blank 1 row of 8x8 modules
-	matrix.setCursor(scrollptr--,y);
-	matrix.print(str);
-	matrix.write();
-}
-
 
 // HTTP related stuff
 // web-pages
@@ -529,20 +521,27 @@ void wotaupl(AsyncWebServerRequest *request, String filename, size_t index, uint
       _SPF("Update Start: %s\n", filename.c_str());
       Update.runAsync(true);
       if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
-	_SPTO(Update.printError(Serial));
+    	_SPTO(Update.printError(Serial));
       }
+      tWeatherUpd.disable();
+      tSensorUpd.disable();
+      tape = F("Updating firmware...");
     }
+
     if(!Update.hasError()){
       if(Update.write(data, len) != len){
         _SPTO(Update.printError(Serial));
       }
     }
+
     if(final){
       if(Update.end(true)){
 	       _SPF("Update Success: %uB, rebooting ESP\n", index+len);
+          tape = F("Update success, rebooting...");
          espreboot();
       } else {
         _SPTO(Update.printError(Serial));
+        tape=F("Update error");
       }
     }
 };
@@ -629,4 +628,14 @@ void wver(AsyncWebServerRequest *request) {
     (uint32_t)tp.tv_sec);
 
   request->send(200, FPSTR(PGmimejson), buff );
+}
+
+void wf1(AsyncWebServerRequest *request) {
+  matrix.shutdown(true);    // attempt to mitigate random garbage at specific modules
+  request->send(200, FPSTR(PGmimetxt), "OK" );
+}
+
+void wf2(AsyncWebServerRequest *request) {
+  matrix.shutdown(false);    // attempt to mitigate random garbage at specific modules
+  request->send(200, FPSTR(PGmimetxt), "OK" );
 }
