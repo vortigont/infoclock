@@ -55,6 +55,8 @@ extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 #define BAUD_RATE	115200	// serial debug port baud rate
 
+#define WEATHER_API_BUFSIZE 768
+
 // PROGMEM strings
 #include "http.h"
 // sprintf template for json version data

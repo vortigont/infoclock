@@ -9,6 +9,10 @@
 #include "main.h"
 #include "EEPROMCfg.h"
 #include "sensors.h"
+//#include "http.h"
+
+
+//#include "EmbUI.h"
 
 //#include <Fonts/FreeSans9pt7b.h>	//good plain
 //#include <Fonts/FreeSansBold9pt7b.h>	// good but too bold
@@ -55,7 +59,7 @@ String tape = "Connecting to WiFi...";
 void setup() {
     _SPTO(Serial.begin(BAUD_RATE));	    // start hw serial for debugging
     _SPLN("Starting InfoClock...");
-
+    String _ssid(WiFi.SSID());
   EEPROMCfg::Load();	// Load config from EEPROM
 
   // set ntp opts
@@ -288,18 +292,24 @@ void updsensstr(){
 }
 
 // получить строку для дисплея из json-ответа
-void ParseWeather(String s){
-   DynamicJsonBuffer jsonBuffer;
-   JsonObject& root = jsonBuffer.parseObject(s);
+void ParseWeather(String result){
+  //DynamicJsonBuffer jsonBuffer;
+  DynamicJsonDocument root(WEATHER_API_BUFSIZE);
+  DeserializationError error = deserializeJson(root, result);
+  result = "";
 
-   if (!root.success()) {
-	_SPLN("Json parsing failed!");
-	tape = "погода недоступна";
-      return;
-   }
+  if (error){
+  	_SPLN(F("Json parsing failed!"));
+	  tape = F("погода недоступна");
+    return;
+  }
+
+  //JsonObject& root = jsonBuffer.parseObject(s);
+  //if (!root.success()) { }
+
 // Погода
    tape = WAPI_CITY_NAME;
-   tape += root["weather"][0]["description"].as<String>();
+   tape += root[F("weather")][0][F("description")].as<String>();
    tape += ", ";
 // Температура
    int t = root["main"]["temp"].as<int>();
@@ -576,12 +586,15 @@ void espreboot() {
  */
 void wcfgset(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
   const size_t bufferSize = 2*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(7) + CFG_JSON_BUF_EXT;
-  StaticJsonBuffer<bufferSize> buff;
-  JsonObject& jsoncfg = buff.parseObject((const char*)data);
+  //StaticJsonBuffer<bufferSize> buff;
+  DynamicJsonDocument jsoncfg(bufferSize);
+  DeserializationError error = deserializeJson(jsoncfg, data);
+  //JsonObject& jsoncfg = buff.parseObject((const char*)data);
 
-  if (!jsoncfg.success()) {
+  //if (!jsoncfg.success()) {
+  if (error){
     request->send_P(500, FPSTR(PGmimejson), PGdre);   // return http-error if json is unparsable
-      return;
+    return;
   }
   //jsoncfg.printTo(Serial); //Debug
 
@@ -593,8 +606,8 @@ void wcfgset(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t i
   if (jsoncfg.containsKey("wA")) {             //We have new WiFi settings
       EEPROMCfg::setConfig().cWmode = atoi(jsoncfg["wM"].as<const char*>());
       if (EEPROMCfg::setConfig().cWmode) {                      // we have non-station config => save SSID/passwd to eeprom
-          snprintf(EEPROMCfg::setConfig().cWssid, sizeof(EEPROMCfg::getConfig().cWssid), "%s", jsoncfg["wS"]);
-          snprintf(EEPROMCfg::setConfig().cWpwd,  sizeof(EEPROMCfg::getConfig().cWpwd),  "%s", jsoncfg["wP"]);  // save password only for internal AP-mode, but never for client
+          snprintf(EEPROMCfg::setConfig().cWssid, sizeof(EEPROMCfg::getConfig().cWssid), "%s", jsoncfg["wS"].as<const char*>());
+          snprintf(EEPROMCfg::setConfig().cWpwd,  sizeof(EEPROMCfg::getConfig().cWpwd),  "%s", jsoncfg["wP"].as<const char*>());  // save password only for internal AP-mode, but never for client
 	  WiFi.softAP(jsoncfg["wS"].as<const char*>(), jsoncfg["wP"].as<const char*>());		// save new AP params to the internal config
       } else {                                // try to connect to the AP with a new settings
             WiFi.mode(WIFI_AP_STA);           // Make sure we are in a client mode
