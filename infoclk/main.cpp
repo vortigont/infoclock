@@ -5,14 +5,15 @@
  */
 
 // Main headers
-#include "Globals.h"
 #include "main.h"
-#include "EEPROMCfg.h"
+//#include "EEPROMCfg.h"
 #include "sensors.h"
 //#include "http.h"
 
+#include <ESP8266HTTPClient.h>
 
-//#include "EmbUI.h"
+
+#include <EmbUI.h>
 
 //#include <Fonts/FreeSans9pt7b.h>	//good plain
 //#include <Fonts/FreeSansBold9pt7b.h>	// good but too bold
@@ -30,8 +31,7 @@ char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
 Sensors clksensor;    // sensor object
 
 // Create an instance of the web-server
-//ESP8266WebServer httpsrv(80);
-AsyncWebServer httpsrv(80);
+//AsyncWebServer httpsrv(88);
 
 //Task Scheduler
 Scheduler ts;
@@ -57,20 +57,15 @@ String tape = "Connecting to WiFi...";
 // ----
 // MAIN Setup
 void setup() {
-    _SPTO(Serial.begin(BAUD_RATE));	    // start hw serial for debugging
-    _SPLN("Starting InfoClock...");
-    String _ssid(WiFi.SSID());
-  EEPROMCfg::Load();	// Load config from EEPROM
+  Serial.begin(BAUD_RATE);	    // start hw serial for debugging
+  LOG(println, F("Starting InfoClock..."));
 
-  // set ntp opts
-  configTime(TZONE, NTP_SERVER);
+  embui.set_callback(CallBack::attach, CallBack::STAGotIP, std::bind(onSTAGotIP));
+  embui.set_callback(CallBack::attach, CallBack::STADisconnected, std::bind(onSTADisconnected));
 
-  wifibegin(EEPROMCfg::getConfig());    // Enable WiFi
+  embui.begin();
 
-  //Define server "pages"
-  httpsrv.onNotFound( [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGindex);});  //return index for non-ex pages
-  //httpsrv.on("/ota",		wota);		// OTA firmware update
-  httpsrv.on("/ver",		wver);		// version and status info
+/*
   httpsrv.on("/cfg", HTTP_GET,  wcfgget);	// get config (json)
   httpsrv.on("/cfg", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, wcfgset);	// set config (json)
   httpsrv.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGotaform);});	// Simple Firmware Update Form
@@ -78,11 +73,14 @@ void setup() {
   httpsrv.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimetxt), "Reboot in UPD_RESTART_DELAY"); espreboot();});
   httpsrv.on("/f1",		wf1);		// fix1
   httpsrv.on("/f2",		wf2);		// fix2
+  httpsrv.on("/ver",		wver);		// version and status info
+*/
 
-   // Set matrix rotations
-   for ( uint8_t i = 0;  i < MATRIX_W*MATRIX_H;  i++ ) {
-        matrix.setRotation(i, MATRIX_ROTATION);
-   }
+
+  // Set matrix rotations
+  for ( uint8_t i = 0;  i < MATRIX_W*MATRIX_H;  i++ ) {
+    matrix.setRotation(i, MATRIX_ROTATION);
+  }
 
   // rotate pane 90 cw
   #ifdef MATRIX_PANEROT
@@ -140,7 +138,7 @@ void setup() {
     }
 
     // Start the Web-server
-    httpsrv.begin();
+    //httpsrv.begin();
     ts.startNow();
     tScroller.enable();
     tSecondsPulse.enableDelayed();
@@ -149,7 +147,7 @@ void setup() {
 
 // MAIN loop
 void loop() {
-
+  embui.handle();
 	//matrix.setFont(&FreeSans9pt7b);	// хороший прямой, тонкий. расстояние м-ду цифрами и ":" большое
 	ts.execute();		// run task scheduler
 // end of main loop
@@ -198,17 +196,22 @@ template <typename T> void scroll( const T& str, int y, int& scrollptr) {
 // callback function for every second pulse task (tSecondsPulse)
 void doSeconds() {
 	// update clock display every new minute
+
+	tDrawTicks.restartDelayed();   //run task that draws one pulse of a ticks
+//  if (!embui.timeProcessor.seconds00())
+//    return;
+
   time(&now);
-  if ( localtime(&now)->tm_min != lastmin ) {
-    //matrix.shutdown(true);    // attempt to mitigate random garbage at specific modules
+  if ( localtime(&now)->tm_min == lastmin )
+    return;  
+
+    lastmin = localtime(&now)->tm_min;
     uint8_t _brt = brightness_calc();
     matrix.setIntensity(_brt);	// set screen brightness
     wscroll = (bool)_brt;		// disable weather scroll at nights
     matrix.fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
-    //matrix.shutdown(false);    // attempt to mitigate random garbage at specific modules
     bigClk();                  //simpleclk();   print time on screen
-    lastmin = localtime(&now)->tm_min;
-  	_SP(ctime(&now));              // print date/time to serial if debug
+  	LOG(print, ctime(&now));              // print date/time to serial if debug
 
     if (wscroll){
       tScroller.enableIfNot();
@@ -218,9 +221,8 @@ void doSeconds() {
       mtxprint(sensorstr, 0, STR_SENSOR_OFFSET_Y);
     }
 
-  }
+//  }
 
-	tDrawTicks.restartDelayed();   //run task that draws one pulse of a ticks
 }
 
 // print big font clock
@@ -229,9 +231,11 @@ void bigClk () {
     matrix.fillRect(0, 0, matrix.width(), CLK_FONT_HEIGHT, 0);
 
     char buf[3];
-    sprintf(buf, "%2d", localtime(&now)->tm_hour);
+    //sprintf(buf, "%2d", localtime(&now)->tm_hour);
+    sprintf(buf, "%2d", embui.timeProcessor.getHours());
     mtxprint(buf, 0, CLK_FONT_OFFSET_Y);
-    sprintf(buf, "%02d", localtime(&now)->tm_min);
+    //sprintf(buf, "%02d", localtime(&now)->tm_min);
+    sprintf(buf, "%2d", embui.timeProcessor.getMinutes());
     mtxprint(buf, CLK_MINUTE_OFFSET_X, CLK_FONT_OFFSET_Y);
 }
 
@@ -267,45 +271,46 @@ void GetWeather(){
   if (!wscroll) // exit if weather string is not scrolling
     return;
 
-    WiFiClient tcpclient;
-    HTTPClient httpreq;
-    _SP(F("Updating weather via: ")); _SPLN(FPSTR(PGwapireq));
+  WiFiClient tcpclient;
+  HTTPClient httpreq;
+  LOG(print, F("Updating weather via: "));
+  LOG(println, FPSTR(PGwapireq));
   if (httpreq.begin(tcpclient, FPSTR(PGwapireq))){
-	int httpCode = httpreq.GET();
-	if( httpCode == HTTP_CODE_OK ){
-		String respdata = httpreq.getString();
-		ParseWeather(respdata);
-		tWeatherUpd.setInterval(WEATHER_UPD_PERIOD * TASK_HOUR);
-	} else {
-		_SP("Weather update code: ");
-		_SPLN(httpCode);
-		tWeatherUpd.setInterval(WEATHER_UPD_RETRY * TASK_MINUTE);
-	}
+  	int httpCode = httpreq.GET();
+	  if( httpCode == HTTP_CODE_OK ){
+		  String respdata = httpreq.getString();
+		  ParseWeather(respdata);
+		  tWeatherUpd.setInterval(WEATHER_UPD_PERIOD * TASK_HOUR);
+  	} else {
+	  	LOG(print, F("Weather update code: "));
+		  LOG(print, httpCode);
+		  tWeatherUpd.setInterval(WEATHER_UPD_RETRY * TASK_MINUTE);
+	  }
   }
-    httpreq.end();
-    tcpclient.stop();
+
+  httpreq.end();
+  tcpclient.stop();
 }
 
 void updsensstr(){
     clksensor.getFormattedValues( sensorstr );
-    _SPLN(sensorstr);
+    LOG(println, sensorstr);
 }
 
 // получить строку для дисплея из json-ответа
 void ParseWeather(String result){
-  //DynamicJsonBuffer jsonBuffer;
   DynamicJsonDocument root(WEATHER_API_BUFSIZE);
   DeserializationError error = deserializeJson(root, result);
   result = "";
 
   if (error){
-  	_SPLN(F("Json parsing failed!"));
-	  tape = F("погода недоступна");
+  	LOG(print, F("Json parsing failed! Error: "));
+  	LOG(println, error.c_str());
+	  tape = F("погода недоступна: ");
+    tape += error.c_str();
+    tape = utf8rus(tape);
     return;
   }
-
-  //JsonObject& root = jsonBuffer.parseObject(s);
-  //if (!root.success()) { }
 
 // Погода
    tape = WAPI_CITY_NAME;
@@ -331,17 +336,17 @@ void ParseWeather(String result){
    tape += root["wind"]["speed"].as<String>();
    tape += " м/с";
 
-   _SP("Weather: ");
-   _SPLN(tape);
+   LOG(print, F("Weather: "));
+   LOG(println, tape);
 
-// Перекодируем из UNICODE в кодировку дисплейного шрифта
-   tape = utf8rus(tape);
+  // Перекодируем из UNICODE в кодировку дисплейного шрифта
+  tape = utf8rus(tape);
 }
 
 
 // calculate brightness for the hour
 uint8_t brightness_calc(void){
-	uint8_t hr = localtime(&now)->tm_hour;
+	uint8_t hr = embui.timeProcessor.getHours();
 	if (hr>=MAX_BRT_HOUR_START && hr<MAX_BRT_HOUR_END)
 		return MAX_BRIGHTNESS;
 
@@ -367,63 +372,22 @@ void panescroller(void){
 // Other functions
 
 // WiFi connection callback
-void onSTAGotIP(WiFiEventStationModeGotIP ipInfo) {
-
-   tape = "WiFi ip:";
-   tape += WiFi.localIP().toString();
-   _SPLN(tape);
-  WiFi.mode(WIFI_STA);        // Shutdown internal Access Point
-
-  sntp_init();
+//void onSTAGotIP(WiFiEventStationModeGotIP ipInfo) {
+void onSTAGotIP() {
+  tape = "WiFi ip:";
+  tape += WiFi.localIP().toString();
+  LOG(println, tape);
 
   //start weather updates
   tWeatherUpd.enableDelayed(WEATHER_INIT_DELAY * TASK_SECOND);
 }
 
 // Manage network disconnection
-void onSTADisconnected(WiFiEventStationModeDisconnected event_info) {
-    WiFi.mode(WIFI_AP_STA);   // Enable internal AP if station connection is lost
-    sntp_stop();              // NTP sync can be disabled while not connected
+//void onSTADisconnected(WiFiEventStationModeDisconnected event_info) {
+void onSTADisconnected() {
     // disabe weather update
 	  tWeatherUpd.disable();
 }
-
-
-
-// Initialize WiFi
-void wifibegin(const cfg &conf) {
-  _SPLN("Enabling WiFi");
-  if (!conf.cWmode) {   //Monitor station events only if in Client/Auto mode
-    _SPLN("Listening for WiFi station events");
-    static WiFiEventHandler e1, e2;
-    e1 = WiFi.onStationModeGotIP(onSTAGotIP);   // WiFi client gets IP event
-    e2 = WiFi.onStationModeDisconnected(onSTADisconnected); // WiFi client disconnected event
-  }
-  WiFi.hostname(conf.chostname);
-  WiFi.mode(conf.cWmode ? WIFI_AP : WIFI_AP_STA);
-  WiFi.begin();		// use internaly stored credentials for connection
-}
-
-/*
-// OTA update
-void otaclient( const String& url) {
-  //timer.disable(poller_id);   // disable poller
-  _SPLN("Trying OTA Update...");
-  WiFiClient client;
-  t_httpUpdate_return ret = ESPhttpUpdate.update(client, url, OTA_VER);
-  switch(ret) {
-    case HTTP_UPDATE_FAILED:
-        _SPLN("[update] Update failed");
-        break;
-    case HTTP_UPDATE_NO_UPDATES:
-        _SPLN("[update] No Updates");
-        break;
-    case HTTP_UPDATE_OK:
-        _SPLN("[update] Update OK"); // may reboot the ESP
-        break;
-    }
-}
-*/
 
 
 /* Recode russian fonts from UTF-8 to Windows-1251 */
@@ -500,124 +464,11 @@ return target;
 }
 
 
-// HTTP related stuff
-// web-pages
-// Takes config struct and sends it as json via http
-void cfg2json(const cfg &conf, AsyncWebServerRequest *request) {
-  char buff[sizeof(conf) + 50];      // let's keep it simple and do some sprintf magic
-  sprintf_P(buff, PGcfgjson, conf.chostname, conf.cWmode, conf.cWssid,  conf.cOTAurl);
-  _SP("EEPROM cfg:"); _SPLN(buff);  //Debug
-  request->send(200, FPSTR(PGmimejson), buff );
-}
-
-
-/*  Webpage: Provide json encoded config data
- *  Get data from EEPROM and return it in via json
- */
-void wcfgget(AsyncWebServerRequest *request) {
-    EEPROMCfg::Load();	// Load config from EEPROM
-    cfg2json(EEPROMCfg::getConfig(), request);     // send it as json
-}
-
-void wotareq(AsyncWebServerRequest *request) {
-    //bool shouldReboot = !Update.hasError();
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", Update.hasError()?"FAIL":"Update OK");
-    response->addHeader("Connection", "close");
-    request->send(response);
-};
-
-void wotaupl(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-    if(!index){
-      _SPF("Update Start: %s\n", filename.c_str());
-      Update.runAsync(true);
-      if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
-    	_SPTO(Update.printError(Serial));
-      }
-      tWeatherUpd.disable();
-      tSensorUpd.disable();
-      tape = F("Updating firmware...");
-    }
-
-    if(!Update.hasError()){
-      if(Update.write(data, len) != len){
-        _SPTO(Update.printError(Serial));
-      }
-    }
-
-    if(final){
-      if(Update.end(true)){
-	       _SPF("Update Success: %uB, rebooting ESP\n", index+len);
-          tape = F("Update success, rebooting...");
-         espreboot();
-      } else {
-        _SPTO(Update.printError(Serial));
-        tape=F("Update error");
-      }
-    }
-};
-
-
-
-/*
-// try OTA Update
-void wota(AsyncWebServerRequest *request) {
-    String otaurl;
-    if(request->hasParam("url")) {    // update via url arg if provided
-        otaurl = request->getParam("url")->value();
-    } else {                      // otherwise use url from EEPROM config
-        EEPROMCfg::Load();	// Load config from EEPROM
-        otaurl = EEPROMCfg::getConfig().cOTAurl;
-    }
-    _SP("OTA update URL:"); _SPLN(otaurl);
-    request->send_P(200, FPSTR(PGmimetxt), PGota );
-    otaclient(otaurl);
-}
-*/
-
 
 // reboot esp task
 void espreboot() {
   	Task *t = new Task(0, TASK_ONCE, [](){ESP.restart();}, &ts, false);
     t->enableDelayed(UPD_RESTART_DELAY * TASK_SECOND);
-}
-
-/*  Webpage: Update config in EEPROM
- *  Use form-posted json object to update data in EEPROM
- */
-void wcfgset(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-  const size_t bufferSize = 2*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(7) + CFG_JSON_BUF_EXT;
-  //StaticJsonBuffer<bufferSize> buff;
-  DynamicJsonDocument jsoncfg(bufferSize);
-  DeserializationError error = deserializeJson(jsoncfg, data);
-  //JsonObject& jsoncfg = buff.parseObject((const char*)data);
-
-  //if (!jsoncfg.success()) {
-  if (error){
-    request->send_P(500, FPSTR(PGmimejson), PGdre);   // return http-error if json is unparsable
-    return;
-  }
-  //jsoncfg.printTo(Serial); //Debug
-
-  EEPROMCfg::Load();	// Load config from EEPROM
-
-  snprintf(EEPROMCfg::setConfig().chostname, sizeof EEPROMCfg::getConfig().chostname, "%s", jsoncfg["wH"].as<const char*>());
-  snprintf(EEPROMCfg::setConfig().cOTAurl, sizeof(EEPROMCfg::getConfig().cOTAurl), "%s", jsoncfg["uU"].as<const char*>());
-
-  if (jsoncfg.containsKey("wA")) {             //We have new WiFi settings
-      EEPROMCfg::setConfig().cWmode = atoi(jsoncfg["wM"].as<const char*>());
-      if (EEPROMCfg::setConfig().cWmode) {                      // we have non-station config => save SSID/passwd to eeprom
-          snprintf(EEPROMCfg::setConfig().cWssid, sizeof(EEPROMCfg::getConfig().cWssid), "%s", jsoncfg["wS"].as<const char*>());
-          snprintf(EEPROMCfg::setConfig().cWpwd,  sizeof(EEPROMCfg::getConfig().cWpwd),  "%s", jsoncfg["wP"].as<const char*>());  // save password only for internal AP-mode, but never for client
-	  WiFi.softAP(jsoncfg["wS"].as<const char*>(), jsoncfg["wP"].as<const char*>());		// save new AP params to the internal config
-      } else {                                // try to connect to the AP with a new settings
-            WiFi.mode(WIFI_AP_STA);           // Make sure we are in a client mode
-            WiFi.begin(jsoncfg["wS"].as<const char*>(), jsoncfg["wP"].as<const char*>()); // try to connect to the AP, event scheduler will
-                                                                                          // take care of disabling internal AP-mode if success
-      }
-  }
-
-  EEPROMCfg::Save();    // Update EEPROM
-  cfg2json(EEPROMCfg::getConfig(), request);   // return current config as serialised json
 }
 
 
@@ -651,4 +502,9 @@ void wf1(AsyncWebServerRequest *request) {
 void wf2(AsyncWebServerRequest *request) {
   matrix.shutdown(false);    // attempt to mitigate random garbage at specific modules
   request->send(200, FPSTR(PGmimetxt), "OK" );
+}
+
+void refreshWeather(){
+  tWeatherUpd.setInterval(TASK_SECOND);
+  tWeatherUpd.restartDelayed();
 }

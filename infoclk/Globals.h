@@ -22,34 +22,8 @@
 #include "config.h"
 
 #include <Arduino.h>
-// Libs
-#include <ESP8266WiFi.h>
-
-#include <ArduinoJson.h>
 
 
 // ========= Defines
 
-// Enable Serial.print if DEBUG
-#ifdef _FWDEBUG_
-  #define _SP(a) Serial.print(a);
-  #define _SPLN(a) Serial.println(a);
-  #define _SPF(a,b) Serial.printf(a,b);
-  #define _SPTO(a) a;
-#else
-  #define _SP(a)
-  #define _SPLN(a)
-  #define _SPF(a,b)
-  #define _SPTO(a)
-#endif
-
-/*
-class Globals {
-public:
-    // public methods
-    Globals();
-    Globals(const Globals& orig);
-    virtual ~Globals();
-}
-*/
 #endif

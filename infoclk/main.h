@@ -17,35 +17,27 @@
 #include "Globals.h"
 
 // Libs
-#include <ESPAsyncWebServer.h>
-// esp8266 OTA Updates
+//#include <ESPAsyncWebServer.h>
 #include <ESP8266HTTPClient.h>
-//#include <ESP8266httpUpdate.h>
 
 // Task Scheduler lib	https://github.com/arkhipenko/TaskScheduler
 #define _TASK_SLEEP_ON_IDLE_RUN
 #include <TaskSchedulerDeclarations.h>
 
-// NTP time
-#include <TZ.h>
+// Time
 #include <time.h>                       // time() ctime()
 #include <sys/time.h>                   // struct timeval
-#include <sntp.h>
+//-#include <sntp.h>
 extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
-// NTP Options
-#define NTP_SERVER COUNTRY ".pool.ntp.org"
 
 // Adafruit_GFX
 #include <Adafruit_GFX.h>	// need to override bundled "glcdfont.c" font with rus version
 #include <Max72xxPanel.h>
 
-// eeprom configuration class
-#include "EEPROMCfg.h"
-
 // Macro
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+//#define STRINGIFY(x) #x
+//#define TOSTRING(x) STRINGIFY(x)
 
 // Defines
 #define HTTP_VER_BUFSIZE 200
@@ -55,33 +47,27 @@ extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 #define BAUD_RATE	115200	// serial debug port baud rate
 
-#define WEATHER_API_BUFSIZE 768
+#define WEATHER_API_BUFSIZE 1024
 
 // PROGMEM strings
-#include "http.h"
+//#include "http.h"
 // sprintf template for json version data
-static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%lu,}";
+static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%u,}";
 // weather API URL
 static const char PGwapireq[] PROGMEM = WAPI_URL "?id=" WAPI_CITY_ID "&units=metric&lang=" COUNTRY "&APPID=" WAPI_KEY;
 
-// callback functions
-void wifibegin(const cfg &conf);   // Initialize WiFi
+void create_parameters();       // декларируем для переопределения weak метода из фреймворка для WebUI
 
-// HTTP server callbacks
-bool cfgupdate( const String& json);		// Parse json config data and update EEPROM
-void wotareq(AsyncWebServerRequest *request);	// Web OTA callbask
-void wotaupl(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-//void otaclient();                  		// try OTA Update
-void wcfgget(AsyncWebServerRequest *request);   // Web: Provide json encoded config data
-void wcfgset(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);   // Web: Update config in EEPROM
+/*
 void wver(AsyncWebServerRequest *request);	// return json with device status & sw version
 void wf1(AsyncWebServerRequest *request);
 void wf2(AsyncWebServerRequest *request);
-
+*/
 
 // TaskScheduler
 //Let the runner object be a global, single instance shared between object files.
 extern Scheduler ts;
+extern Max72xxPanel matrix;
 
 // Task Callback methods prototypes
 void GetWeather();		// Update weather info with HTTP client
@@ -90,6 +76,7 @@ void panescroller();		// Scroll text over pane
 void doSeconds();		// every second pulse task (tSecondsPulse)
 bool drawticks();		// Draw hh:mm ticks
 void clearticks();		// clear hh:mm ticks
+void refreshWeather();  // restart weather timer
 
 // Display manipulation functions
 uint8_t brightness_calc(void);		// calculate display brightness for current time of day
@@ -109,5 +96,10 @@ String utf8rus(String source);
 
 // reboot esp with a delay
 void espreboot(void);
+
+// WiFi connection callback
+void onSTAGotIP();
+// Manage network disconnection
+void onSTADisconnected();
 
 template <typename T> void scroll( const T& str, int y, int& scrollptr);
