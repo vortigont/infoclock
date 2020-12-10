@@ -15,9 +15,6 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-//#include <stdint.h>
-//#include <sys/types.h>
-
 // Sketch configuration
 #include "config.h"
 

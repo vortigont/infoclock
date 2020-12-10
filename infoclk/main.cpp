@@ -6,9 +6,14 @@
 
 // Main headers
 #include "main.h"
-//#include "EEPROMCfg.h"
+
+// Time
+#include <time.h>                       // time() ctime()
+#include <sys/time.h>                   // struct timeval
+//-#include <sntp.h>
+extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
+
 #include "sensors.h"
-//#include "http.h"
 
 #include <ESP8266HTTPClient.h>
 
@@ -26,9 +31,8 @@
 // Constructs
 Max72xxPanel matrix = Max72xxPanel(PIN_CS, MATRIX_W, MATRIX_H);
 
-// Sensors
-char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
-Sensors clksensor;    // sensor object
+// Parola lib
+//https://github.com/MajicDesigns/MD_Parola
 
 // Create an instance of the web-server
 //AsyncWebServer httpsrv(88);
@@ -37,19 +41,23 @@ Sensors clksensor;    // sensor object
 Scheduler ts;
 
 // Tasks
-Task tWeatherUpd(WEATHER_UPD_PERIOD * TASK_HOUR, TASK_FOREVER, &GetWeather, &ts, false);
+Task tWeatherUpd(WAPI_DEFAULT_UPDATE_TIME * TASK_HOUR, TASK_FOREVER, &GetWeather, &ts, false);
 Task tSensorUpd(SENSOR_UPD_PERIOD * TASK_SECOND, TASK_FOREVER, &updsensstr, &ts, false);
 Task tScroller(SCROLL_RATE, TASK_FOREVER, &panescroller, &ts, false);
 Task tSecondsPulse(TASK_SECOND, TASK_FOREVER, &doSeconds, &ts, false);
-// Draw pulsing ticks every second
+// Draw pulsing ticks
 Task tDrawTicks(TICKS_TIME, TASK_ONCE, NULL, &ts, false, &drawticks, &clearticks);
 
 static time_t now;
 uint8_t lastmin = 0;
-bool wscroll = 0;	// do weather scroll
+bool wscroll = 1;	// do weather scroll
 
 // scroll y pointers
 int strp1, strp2 = 0;
+
+// Sensors
+char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
+Sensors clksensor;    // sensor object
 
 // String for weather info
 String tape = "Connecting to WiFi...";
@@ -107,18 +115,18 @@ void setup() {
   // Make pane Zig-Zag with normal orientation
   #ifdef MATRIX_ZIGZAG
   // modules position (n,x,y) x,y(0,0) is from the top left corner of the pane
-  matrix.setPosition(0, 3, 0); matrix.setRotation(0,3);
-  matrix.setPosition(1, 2, 0); matrix.setRotation(1,3);
-  matrix.setPosition(2, 1, 0); matrix.setRotation(2,3);
-  matrix.setPosition(3, 0, 0); matrix.setRotation(3,3);
+  matrix.setPosition(0, 3, 0); matrix.setRotation(0, Rotation::CCW90);
+  matrix.setPosition(1, 2, 0); matrix.setRotation(1, Rotation::CCW90);
+  matrix.setPosition(2, 1, 0); matrix.setRotation(2, Rotation::CCW90);
+  matrix.setPosition(3, 0, 0); matrix.setRotation(3, Rotation::CCW90);
   matrix.setPosition(4, 0, 1);
   matrix.setPosition(5, 1, 1);
   matrix.setPosition(6, 2, 1);
   matrix.setPosition(7, 3, 1);
-  matrix.setPosition(8, 3, 2); matrix.setRotation(8,3);
-  matrix.setPosition(9, 2, 2); matrix.setRotation(9,3);
-  matrix.setPosition(10, 1, 2); matrix.setRotation(10,3);
-  matrix.setPosition(11, 0, 2); matrix.setRotation(11,3);
+  matrix.setPosition(8, 3, 2); matrix.setRotation(8, Rotation::CCW90);
+  matrix.setPosition(9, 2, 2); matrix.setRotation(9, Rotation::CCW90);
+  matrix.setPosition(10, 1, 2); matrix.setRotation(10, Rotation::CCW90);
+  matrix.setPosition(11, 0, 2); matrix.setRotation(11, Rotation::CCW90);
   matrix.setPosition(12, 0, 3);
   matrix.setPosition(13, 1, 3);
   matrix.setPosition(14, 2, 3);
@@ -130,17 +138,17 @@ void setup() {
     matrix.setTextWrap(false);
     //matrix.fillScreen(LOW);
 
+    ts.startNow();    // start scheduler
+
     if (clksensor.begin() == sensor_t::NA) {
         ts.deleteTask(tSensorUpd);
         updsensstr();
     } else {
     	tSensorUpd.enableDelayed();
+      clksensor.getSensorModel(sensorstr);
     }
 
-    // Start the Web-server
-    //httpsrv.begin();
-    ts.startNow();
-    tScroller.enable();
+    tScroller.enableDelayed();
     tSecondsPulse.enableDelayed();
 }
 
@@ -148,11 +156,8 @@ void setup() {
 // MAIN loop
 void loop() {
   embui.handle();
-	//matrix.setFont(&FreeSans9pt7b);	// хороший прямой, тонкий. расстояние м-ду цифрами и ":" большое
 	ts.execute();		// run task scheduler
-// end of main loop
-}
-
+} // end of main loop
 
 
 
@@ -198,20 +203,19 @@ void doSeconds() {
 	// update clock display every new minute
 
 	tDrawTicks.restartDelayed();   //run task that draws one pulse of a ticks
-//  if (!embui.timeProcessor.seconds00())
-//    return;
 
   time(&now);
   if ( localtime(&now)->tm_min == lastmin )
-    return;  
+    return;
 
     lastmin = localtime(&now)->tm_min;
     uint8_t _brt = brightness_calc();
+    matrix.reset();             // reset matrix to clear possible garbage
     matrix.setIntensity(_brt);	// set screen brightness
-    wscroll = (bool)_brt;		// disable weather scroll at nights
+    wscroll = (bool)_brt;		    // disable weather scroll at nights
     matrix.fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
-    bigClk();                  //simpleclk();   print time on screen
-  	LOG(print, ctime(&now));              // print date/time to serial if debug
+    bigClk();                   //simpleclk();   print time on screen
+  	LOG(print, ctime(&now));    // print date/time to serial if debug
 
     if (wscroll){
       tScroller.enableIfNot();
@@ -220,9 +224,6 @@ void doSeconds() {
      	matrix.setFont();
       mtxprint(sensorstr, 0, STR_SENSOR_OFFSET_Y);
     }
-
-//  }
-
 }
 
 // print big font clock
@@ -231,11 +232,9 @@ void bigClk () {
     matrix.fillRect(0, 0, matrix.width(), CLK_FONT_HEIGHT, 0);
 
     char buf[3];
-    //sprintf(buf, "%2d", localtime(&now)->tm_hour);
     sprintf(buf, "%2d", embui.timeProcessor.getHours());
     mtxprint(buf, 0, CLK_FONT_OFFSET_Y);
-    //sprintf(buf, "%02d", localtime(&now)->tm_min);
-    sprintf(buf, "%2d", embui.timeProcessor.getMinutes());
+    sprintf(buf, "%02d", embui.timeProcessor.getMinutes());
     mtxprint(buf, CLK_MINUTE_OFFSET_X, CLK_FONT_OFFSET_Y);
 }
 
@@ -273,18 +272,24 @@ void GetWeather(){
 
   WiFiClient tcpclient;
   HTTPClient httpreq;
+
+  String url = FPSTR(PGwapireq1);
+  url += embui.param(FPSTR(V_WAPI_CITY_ID));
+  url += FPSTR(PGwapireq2);
+  url += embui.param(FPSTR(V_WAPI_KEY));
+
   LOG(print, F("Updating weather via: "));
-  LOG(println, FPSTR(PGwapireq));
-  if (httpreq.begin(tcpclient, FPSTR(PGwapireq))){
+  LOG(println, url);
+  if (httpreq.begin(tcpclient, url)){
   	int httpCode = httpreq.GET();
 	  if( httpCode == HTTP_CODE_OK ){
 		  String respdata = httpreq.getString();
 		  ParseWeather(respdata);
-		  tWeatherUpd.setInterval(WEATHER_UPD_PERIOD * TASK_HOUR);
+		  tWeatherUpd.setInterval(embui.param(FPSTR(V_W_UPD_TIME)).toInt() * TASK_HOUR);
   	} else {
 	  	LOG(print, F("Weather update code: "));
 		  LOG(print, httpCode);
-		  tWeatherUpd.setInterval(WEATHER_UPD_RETRY * TASK_MINUTE);
+		  tWeatherUpd.setInterval(embui.param(FPSTR(V_W_UPD_RTR)).toInt() * TASK_MINUTE);
 	  }
   }
 
@@ -313,7 +318,7 @@ void ParseWeather(String result){
   }
 
 // Погода
-   tape = WAPI_CITY_NAME;
+   tape = embui.param(FPSTR(V_WAPI_CITY_NAME));
    tape += root[F("weather")][0][F("description")].as<String>();
    tape += ", ";
 // Температура
@@ -492,16 +497,6 @@ void wver(AsyncWebServerRequest *request) {
     (uint32_t)tp.tv_sec);
 
   request->send(200, FPSTR(PGmimejson), buff );
-}
-
-void wf1(AsyncWebServerRequest *request) {
-  matrix.shutdown(true);    // attempt to mitigate random garbage at specific modules
-  request->send(200, FPSTR(PGmimetxt), "OK" );
-}
-
-void wf2(AsyncWebServerRequest *request) {
-  matrix.shutdown(false);    // attempt to mitigate random garbage at specific modules
-  request->send(200, FPSTR(PGmimetxt), "OK" );
 }
 
 void refreshWeather(){

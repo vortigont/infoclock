@@ -24,20 +24,13 @@
 #define _TASK_SLEEP_ON_IDLE_RUN
 #include <TaskSchedulerDeclarations.h>
 
-// Time
-#include <time.h>                       // time() ctime()
-#include <sys/time.h>                   // struct timeval
-//-#include <sntp.h>
-extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
-
-
 // Adafruit_GFX
 #include <Adafruit_GFX.h>	// need to override bundled "glcdfont.c" font with rus version
 #include <Max72xxPanel.h>
 
-// Macro
-//#define STRINGIFY(x) #x
-//#define TOSTRING(x) STRINGIFY(x)
+#include "uistrings.h"   // non-localized text-strings
+#include "ui_i18n.h"     // localized GUI text-strings
+
 
 // Defines
 #define HTTP_VER_BUFSIZE 200
@@ -54,7 +47,8 @@ extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 // sprintf template for json version data
 static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%u,}";
 // weather API URL
-static const char PGwapireq[] PROGMEM = WAPI_URL "?id=" WAPI_CITY_ID "&units=metric&lang=" COUNTRY "&APPID=" WAPI_KEY;
+static const char PGwapireq1[] PROGMEM = WAPI_URL "?id=";
+static const char PGwapireq2[] PROGMEM = "&units=metric&lang=" COUNTRY "&APPID=";   // WAPI_KEY;
 
 void create_parameters();       // декларируем для переопределения weak метода из фреймворка для WebUI
 

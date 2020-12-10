@@ -1,33 +1,19 @@
 #pragma once
 
-
-/**
- * List of languages available
- */
-enum LANG : uint8_t {
-    RU = (0U),
-    EN = (1U),
-};
-
+// Interface blocks
 void block_menu(Interface *interf, JsonObject *data);
-void block_settings_netw(Interface *interf, JsonObject *data);
-void block_settings_update(Interface *interf, JsonObject *data);
-void block_settings_time(Interface *interf, JsonObject *data);
-
-void section_settings_frame(Interface *interf, JsonObject *data);
-void set_settings_wifi(Interface *interf, JsonObject *data);
-void set_settings_wifiAP(Interface *interf, JsonObject *data);
-void set_settings_mqtt(Interface *interf, JsonObject *data);
-void set_settings_time(Interface *interf, JsonObject *data);
-void set_language(Interface *interf, JsonObject *data);
-
-
-//void save_lamp_flags();
+void block_page_clock(Interface *interf, JsonObject *data);
+void block_page_weather(Interface *interf, JsonObject *data);
 
 //void remote_action(RA action, ...);
-
 //void uploadProgress(size_t len, size_t total);
-void block_page_clock(Interface *interf, JsonObject *data);
+
+//  ACTIONS
+void action_demopage(Interface *interf, JsonObject *data);
 void upd_weather(Interface *interf, JsonObject *data);
+void set_weather(Interface *interf, JsonObject *data); 
 void ui_set_brightness(Interface *interf, JsonObject *data);
 void ui_mx_reset(Interface *interf, JsonObject *data);
+
+// Callbacks
+void pubCallback(Interface *interf);
