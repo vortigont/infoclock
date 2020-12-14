@@ -64,7 +64,9 @@ void doSeconds();		// every second pulse task (tSecondsPulse)
 bool drawticks();		// Draw hh:mm ticks
 void clearticks();		// clear hh:mm ticks
 void refreshWeather();  // restart weather timer
-void mxRotation(const int r);   // matrix rotation
+void mxRotation(const int r);       // matrix rotation
+void mxPaneRotation(const bool serp,  const bool vert, const bool vflip, const bool hflip, unsigned int mr);
+//void mxPaneRotation(const int r);   // canvas rotation
 
 // Display manipulation functions
 uint8_t brightness_calc(void);		// calculate display brightness for current time of day

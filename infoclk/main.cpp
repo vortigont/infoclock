@@ -76,36 +76,24 @@ void setup() {
   w = embui.param(FPSTR(V_MX_W)).toInt();
   h = embui.param(FPSTR(V_MX_H)).toInt();
 
+  // create display object
   matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(PIN_CS, w, h));
 
   // Set matrix rotations
-  for ( uint8_t i = 0;  i != w*h;  ++i ) {
-    matrix->setRotation(i, embui.param(FPSTR(V_MX_W)).toInt());
-  }
+  //mxRotation(embui.param(FPSTR(V_MX_MR)).toInt());
+
+    mxPaneRotation(embui.param(FPSTR(V_MX_OS)) == FPSTR(P_true),
+        embui.param(FPSTR(V_MX_OV)) == FPSTR(P_true),
+        embui.param(FPSTR(V_MX_VF)) == FPSTR(P_true),
+        embui.param(FPSTR(V_MX_HF)) == FPSTR(P_true),
+        embui.param(FPSTR(V_MX_MR)).toInt()
+    );
 
   // rotate pane 90 cw
-  #ifdef MATRIX_PANEROT
-  // modules position x,y from the top left corner
-  matrix->setPosition(0, 0, 3); // The first display is at <4, 0>
-  matrix->setPosition(1, 0, 2);
-  matrix->setPosition(2, 0, 1);
-  matrix->setPosition(3, 0, 0);
-  matrix->setPosition(4, 1, 3);
-  matrix->setPosition(5, 1, 2);
-  matrix->setPosition(6, 1, 1);
-  matrix->setPosition(7, 1, 0);
-  matrix->setPosition(8, 2, 3);
-  matrix->setPosition(9, 2, 2);
-  matrix->setPosition(10, 2, 1);
-  matrix->setPosition(11, 2, 0);
-  matrix->setPosition(12, 3, 3);
-  matrix->setPosition(13, 3, 2);
-  matrix->setPosition(14, 3, 1);
-  matrix->setPosition(15, 3, 0); // The last display is at <3, 0>
-  #endif // MATRIX_PANEROT
+  //mxPaneRotation(embui.param(FPSTR(V_MX_CR)).toInt());
 
-
-  // Make pane Zig-Zag with normal orientation
+/*
+  // Make pane Serpent with normal orientation
   #ifdef MATRIX_ZIGZAG
   // modules position (n,x,y) x,y(0,0) is from the top left corner of the pane
   matrix->setPosition(0, 3, 0); matrix->setRotation(0, Rotation::CCW90);
@@ -125,6 +113,7 @@ void setup() {
   matrix->setPosition(14, 2, 3);
   matrix->setPosition(15, 3, 3); // The last display is at <3, 3>
   #endif
+*/
 
     //matrix->setFont(&TomThumb);
     //matrix->setFont(&FreeMono9pt7b);
@@ -497,11 +486,72 @@ void refreshWeather(){
   tWeatherUpd.restartDelayed();
 }
 
-  // Set matrix rotations
+// Set MAX modules rotations
 void mxRotation(const int r){
   for ( uint8_t i = 0;  i != w*h;  ++i ) {
-    //matrix->setRotation(i, embui.param(FPSTR(V_MX_W)).toInt());
     matrix->setRotation(i, r);
-    LOG(printf, "Rotating: %d %d\n", i, r);
   }
+}
+
+// Set Pane rotation
+void mxPaneRotation(const bool serp,  const bool vert, const bool vflip, const bool hflip, const unsigned int mr){
+  LOG(printf, "Pos params: %d %d %d %d %d\n", serp, vert, vflip, hflip, mr);
+
+  uint8_t x,y;
+  unsigned int _mr;
+  bool _vflip, _hflip;
+
+  for ( uint8_t i = 0;  i != w*h;  ++i ) {
+    _mr = mr;
+    _vflip = vflip;
+    _hflip = hflip;
+
+    if ( vert ){
+      x = hflip ? w-i/h-1 : i/h;
+      if (serp && x%2){
+        _vflip = !vflip;
+        _mr = (mr+2)%4;
+      }
+      //bool _vflip = (serp && x%2) ? !vflip : vflip; // V-flip every odd row
+      y = _vflip ? h-i%h-1 : i%h;
+    } else {
+      y = vflip ? h-i/w-1 : i/w;
+      if (serp && y%2){
+        _hflip = !hflip;
+        _mr = (mr+2)%4;
+      }
+      //bool _hflip = (serp && y%2) ? !hflip : hflip; // H-flip every odd col
+      x = _hflip ? w-i%w-1 : i%w;
+    }
+
+    matrix->setPosition(i, x, y);
+    LOG(printf, "Positioning: %d - %d %d\n", i, x, y);
+
+    matrix->setRotation(i, _mr);
+    LOG(printf, "Rotating: %d %d\n", i, _mr);
+  }
+
+  matrix->fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
+  //bigClk();                     //simpleclk();   print time on screen
+/*
+  for ( uint8_t i = 0;  i != w*h;  ++i ) {
+//    LOG(printf, "Rotating: %d %d\n", i, r);
+    switch (r) {
+      default:
+      case 0:   // normal orientation
+        matrix->setPosition(i, i%w, i/w);
+        break;
+      case 1:   // 90 CW
+        matrix->setPosition(i, i/w, (w*h-i-1)%w);
+        LOG(printf, "Canvas: %d %d %d\n", i, i/w, (w*h-i-1)%w);
+        break;
+      case 2:   // 180 CW
+        matrix->setPosition(i, w-i%w-1, h-i/h-1);
+        break;
+      case 3:   // 90 CCW
+        matrix->setPosition(i, w-i%w-1, i%w);
+        break;
+    }
+  }
+*/
 }

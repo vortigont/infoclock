@@ -31,8 +31,13 @@ void create_parameters(){
     embui.var_create(FPSTR(V_W_UPD_RTR),  TOSTRING(WAPI_DEFAULT_RETRY_TIME));	            // weather update, minutes
     embui.var_create(FPSTR(V_MX_W), TOSTRING(MX_DEFAULT_W));	            // Matrix W
     embui.var_create(FPSTR(V_MX_H), TOSTRING(MX_DEFAULT_H));	            // Matrix H
-    embui.var_create(FPSTR(V_MX_R), TOSTRING(MX_DEFAULT_R));	            // Matrix Rotation
+    embui.var_create(FPSTR(V_MX_MR), TOSTRING(MX_DEFAULT_MR));	            // Matrix Rotation
+    embui.var_create(FPSTR(V_MX_VF), TOSTRING(MX_DEFAULT_VF));	            // Matrix Rotation
+    embui.var_create(FPSTR(V_MX_HF), TOSTRING(MX_DEFAULT_HF));	            // Matrix Rotation
+    embui.var_create(FPSTR(V_MX_OS), TOSTRING(MX_DEFAULT_OV));	            // Matrix Rotation
+    embui.var_create(FPSTR(V_MX_OV), TOSTRING(MX_DEFAULT_OR));	            // Matrix Rotation
 
+    //embui.var_create(FPSTR(V_MX_CR), TOSTRING(MX_DEFAULT_CR));	            // Matrix canvas Rotation
 
     /**
      * обработчики действий
@@ -170,8 +175,9 @@ void block_page_matrix(Interface *interf, JsonObject *data){
     //interf->json_section_begin(FPSTR(B_MATRIX));
     interf->json_section_line(FPSTR(A_SET_MATRIX));
 
-    interf->text(FPSTR(V_MX_W), FPSTR(F("Matrix Width")));        // Num of modules W
-    interf->text(FPSTR(V_MX_H), FPSTR(F("Matrix Height")));       // Num of modules H
+    interf->text(FPSTR(V_MX_W), FPSTR(F("Panel Width")));        // Num of modules W
+    interf->text(FPSTR(V_MX_H), FPSTR(F("Panel Height")));       // Num of modules H
+
 
     /*
 	 * Define if and how the displays are rotated. The first display
@@ -181,7 +187,7 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 	 *   2: 180 degrees
 	 *   3: 90 degrees counter clockwise
 	 */
-    interf->select(FPSTR(V_MX_R), F("MAX Module rotation"));
+    interf->select(FPSTR(V_MX_MR), embui.param(FPSTR(V_MX_MR)), F("MAX Module rotation"), false, false);
     interf->option("0", F("No rotation"));
     interf->option("1", F("90 CW"));
     interf->option("2", F("180 CW"));
@@ -190,9 +196,17 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 
     //interf->text(FPSTR(V_MX_R), FPSTR(F("Matrix Rotaion")));      // Modules rotation
 
-
     //interf->checkbox(FPSTR(TCONST_001A), myLamp.isLampOn()? FPSTR(TCONST_FFFF) : FPSTR(TCONST_FFFE), FPSTR(TINTF_00E), true);
     interf->json_section_end();     // end of line
+
+    interf->json_section_line(FPSTR(A_SET_MATRIX));
+
+    interf->checkbox(FPSTR(V_MX_OS), embui.param(FPSTR(V_MX_OS)), F("Serpentine"), false);	// Serpentine/Zig-zag sequence
+    interf->checkbox(FPSTR(V_MX_OV), embui.param(FPSTR(V_MX_OV)), F("Vertical"), false);	// Vertical sequence
+    interf->checkbox(FPSTR(V_MX_VF), embui.param(FPSTR(V_MX_VF)), F("V-Flip"), false);	// Flip verticaly
+    interf->checkbox(FPSTR(V_MX_HF), embui.param(FPSTR(V_MX_HF)), F("H-Flip"), false);	// Flip horizontaly
+    interf->json_section_end();     // end of line
+
 
     interf->button_submit(FPSTR(A_SET_MATRIX), FPSTR(T_DICT[lang][TD::D_SAVE]), "blue");
 //FPSTR(T_BLUE)
@@ -246,24 +260,30 @@ void set_weather(Interface *interf, JsonObject *data){
 void set_matrix(Interface *interf, JsonObject *data){
     if (!data) return;
 
-    // сохраняем параметры настроек погоды
     SETPARAM(FPSTR(V_MX_W));
     SETPARAM(FPSTR(V_MX_H));
-    //int a = ((*data)[FPSTR(V_MX_R)]).as<int>();
-    int a = (*data)[FPSTR(V_MX_R)];
-    SETPARAM(FPSTR(V_MX_R));
+    SETPARAM(FPSTR(V_MX_VF));
+    SETPARAM(FPSTR(V_MX_HF));
+    SETPARAM(FPSTR(V_MX_OS));
+    SETPARAM(FPSTR(V_MX_OV));
+    SETPARAM(FPSTR(V_MX_MR));
 
-    LOG(printf, "mx_r: %d\n", a); (*data)[FPSTR(V_MX_R)];
-    LOG(printf, "Set matrix action: %d\n", a);
-    mxRotation(a);
-
+    //mxRotation((*data)[FPSTR(V_MX_MR)]);
+    //(*data)[FPSTR(TCONST_0006)] == PSTR(P_true)
+//
+    mxPaneRotation(
+        (*data)[FPSTR(V_MX_OS)] == FPSTR(P_true),
+        (*data)[FPSTR(V_MX_OV)] == FPSTR(P_true),
+        (*data)[FPSTR(V_MX_VF)] == FPSTR(P_true), (*data)[FPSTR(V_MX_HF)] == FPSTR(P_true),
+        (*data)[FPSTR(V_MX_MR)].as<unsigned int>()
+    );
+//
 /*
-  // Set matrix rotations
-  for ( uint8_t i = 0;  i != w*h;  ++i ) {
-    matrix->setRotation(i, embui.param(FPSTR(V_MX_W)).toInt());
-  }
+    mxPaneRotation((*data)[FPSTR(V_MX_OS)].as<bool>(), (*data)[FPSTR(V_MX_OV)].as<bool>(),
+        (*data)[FPSTR(V_MX_VF)].as<bool>(), (*data)[FPSTR(V_MX_HF)].as<bool>(),
+        (*data)[FPSTR(V_MX_MR)].as<bool>()
+    );
 */
-
     //const char *w = (*data)[FPSTR(P_WCSSID)];    // переменные доступа в конфиге не храним
     //const char *pwd = (*data)[FPSTR(P_WCPASS)];     // фреймворк хранит последнюю доступную точку самостоятельно
 /*
@@ -273,7 +293,8 @@ void set_matrix(Interface *interf, JsonObject *data){
         LOG(println, F("UI WiFi: No SSID defined!"));
     }
 */
-    section_main_frame(interf, data);
+    //section_main_frame(interf, data);
+    block_page_matrix(interf, data);
 }
 
 
@@ -291,5 +312,5 @@ void ui_set_brightness(Interface *interf, JsonObject *data){
  * сбрасывает состояние всех регистров, помогает устранить артефакты на модулях
  */
 void ui_mx_reset(Interface *interf, JsonObject *data){
-    matrix->reset();
+    //matrix->reset();
 }
