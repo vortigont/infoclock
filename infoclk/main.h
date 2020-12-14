@@ -13,6 +13,7 @@
  *
  */
 
+#pragma once
 // Sketch configuration
 #include "Globals.h"
 
@@ -43,7 +44,6 @@
 #define WEATHER_API_BUFSIZE 1024
 
 // PROGMEM strings
-//#include "http.h"
 // sprintf template for json version data
 static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%u,}";
 // weather API URL
@@ -52,16 +52,9 @@ static const char PGwapireq2[] PROGMEM = "&units=metric&lang=" COUNTRY "&APPID="
 
 void create_parameters();       // декларируем для переопределения weak метода из фреймворка для WebUI
 
-/*
-void wver(AsyncWebServerRequest *request);	// return json with device status & sw version
-void wf1(AsyncWebServerRequest *request);
-void wf2(AsyncWebServerRequest *request);
-*/
-
 // TaskScheduler
 //Let the runner object be a global, single instance shared between object files.
 extern Scheduler ts;
-extern Max72xxPanel matrix;
 
 // Task Callback methods prototypes
 void GetWeather();		// Update weather info with HTTP client
@@ -71,6 +64,7 @@ void doSeconds();		// every second pulse task (tSecondsPulse)
 bool drawticks();		// Draw hh:mm ticks
 void clearticks();		// clear hh:mm ticks
 void refreshWeather();  // restart weather timer
+void mxRotation(const int r);   // matrix rotation
 
 // Display manipulation functions
 uint8_t brightness_calc(void);		// calculate display brightness for current time of day

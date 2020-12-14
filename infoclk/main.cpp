@@ -29,13 +29,11 @@ extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 // ----
 // Constructs
-Max72xxPanel matrix = Max72xxPanel(PIN_CS, MATRIX_W, MATRIX_H);
+std::unique_ptr<Max72xxPanel> matrix = nullptr;   // указатель для обеъкта матрицы, будет инициализирован позже
 
 // Parola lib
 //https://github.com/MajicDesigns/MD_Parola
 
-// Create an instance of the web-server
-//AsyncWebServer httpsrv(88);
 
 //Task Scheduler
 Scheduler ts;
@@ -51,6 +49,7 @@ Task tDrawTicks(TICKS_TIME, TASK_ONCE, NULL, &ts, false, &drawticks, &clearticks
 static time_t now;
 uint8_t lastmin = 0;
 bool wscroll = 1;	// do weather scroll
+uint8_t w,h;    // matrix width, height
 
 // scroll y pointers
 int strp1, strp2 = 0;
@@ -73,70 +72,64 @@ void setup() {
 
   embui.begin();
 
-/*
-  httpsrv.on("/cfg", HTTP_GET,  wcfgget);	// get config (json)
-  httpsrv.on("/cfg", HTTP_POST, [](AsyncWebServerRequest *request){}, NULL, wcfgset);	// set config (json)
-  httpsrv.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimehtml), PGotaform);});	// Simple Firmware Update Form
-  httpsrv.on("/update", HTTP_POST, wotareq, wotaupl);	// OTA firmware update
-  httpsrv.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){request->send_P(200, FPSTR(PGmimetxt), "Reboot in UPD_RESTART_DELAY"); espreboot();});
-  httpsrv.on("/f1",		wf1);		// fix1
-  httpsrv.on("/f2",		wf2);		// fix2
-  httpsrv.on("/ver",		wver);		// version and status info
-*/
+  // read matrix w,h from config
+  w = embui.param(FPSTR(V_MX_W)).toInt();
+  h = embui.param(FPSTR(V_MX_H)).toInt();
 
+  matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(PIN_CS, w, h));
 
   // Set matrix rotations
-  for ( uint8_t i = 0;  i < MATRIX_W*MATRIX_H;  i++ ) {
-    matrix.setRotation(i, MATRIX_ROTATION);
+  for ( uint8_t i = 0;  i != w*h;  ++i ) {
+    matrix->setRotation(i, embui.param(FPSTR(V_MX_W)).toInt());
   }
 
   // rotate pane 90 cw
   #ifdef MATRIX_PANEROT
   // modules position x,y from the top left corner
-  matrix.setPosition(0, 0, 3); // The first display is at <4, 0>
-  matrix.setPosition(1, 0, 2);
-  matrix.setPosition(2, 0, 1);
-  matrix.setPosition(3, 0, 0);
-  matrix.setPosition(4, 1, 3);
-  matrix.setPosition(5, 1, 2);
-  matrix.setPosition(6, 1, 1);
-  matrix.setPosition(7, 1, 0);
-  matrix.setPosition(8, 2, 3);
-  matrix.setPosition(9, 2, 2);
-  matrix.setPosition(10, 2, 1);
-  matrix.setPosition(11, 2, 0);
-  matrix.setPosition(12, 3, 3);
-  matrix.setPosition(13, 3, 2);
-  matrix.setPosition(14, 3, 1);
-  matrix.setPosition(15, 3, 0); // The last display is at <3, 0>
+  matrix->setPosition(0, 0, 3); // The first display is at <4, 0>
+  matrix->setPosition(1, 0, 2);
+  matrix->setPosition(2, 0, 1);
+  matrix->setPosition(3, 0, 0);
+  matrix->setPosition(4, 1, 3);
+  matrix->setPosition(5, 1, 2);
+  matrix->setPosition(6, 1, 1);
+  matrix->setPosition(7, 1, 0);
+  matrix->setPosition(8, 2, 3);
+  matrix->setPosition(9, 2, 2);
+  matrix->setPosition(10, 2, 1);
+  matrix->setPosition(11, 2, 0);
+  matrix->setPosition(12, 3, 3);
+  matrix->setPosition(13, 3, 2);
+  matrix->setPosition(14, 3, 1);
+  matrix->setPosition(15, 3, 0); // The last display is at <3, 0>
   #endif // MATRIX_PANEROT
 
 
   // Make pane Zig-Zag with normal orientation
   #ifdef MATRIX_ZIGZAG
   // modules position (n,x,y) x,y(0,0) is from the top left corner of the pane
-  matrix.setPosition(0, 3, 0); matrix.setRotation(0, Rotation::CCW90);
-  matrix.setPosition(1, 2, 0); matrix.setRotation(1, Rotation::CCW90);
-  matrix.setPosition(2, 1, 0); matrix.setRotation(2, Rotation::CCW90);
-  matrix.setPosition(3, 0, 0); matrix.setRotation(3, Rotation::CCW90);
-  matrix.setPosition(4, 0, 1);
-  matrix.setPosition(5, 1, 1);
-  matrix.setPosition(6, 2, 1);
-  matrix.setPosition(7, 3, 1);
-  matrix.setPosition(8, 3, 2); matrix.setRotation(8, Rotation::CCW90);
-  matrix.setPosition(9, 2, 2); matrix.setRotation(9, Rotation::CCW90);
-  matrix.setPosition(10, 1, 2); matrix.setRotation(10, Rotation::CCW90);
-  matrix.setPosition(11, 0, 2); matrix.setRotation(11, Rotation::CCW90);
-  matrix.setPosition(12, 0, 3);
-  matrix.setPosition(13, 1, 3);
-  matrix.setPosition(14, 2, 3);
-  matrix.setPosition(15, 3, 3); // The last display is at <3, 3>
+  matrix->setPosition(0, 3, 0); matrix->setRotation(0, Rotation::CCW90);
+  matrix->setPosition(1, 2, 0); matrix->setRotation(1, Rotation::CCW90);
+  matrix->setPosition(2, 1, 0); matrix->setRotation(2, Rotation::CCW90);
+  matrix->setPosition(3, 0, 0); matrix->setRotation(3, Rotation::CCW90);
+  matrix->setPosition(4, 0, 1);
+  matrix->setPosition(5, 1, 1);
+  matrix->setPosition(6, 2, 1);
+  matrix->setPosition(7, 3, 1);
+  matrix->setPosition(8, 3, 2); matrix->setRotation(8, Rotation::CCW90);
+  matrix->setPosition(9, 2, 2); matrix->setRotation(9, Rotation::CCW90);
+  matrix->setPosition(10, 1, 2); matrix->setRotation(10, Rotation::CCW90);
+  matrix->setPosition(11, 0, 2); matrix->setRotation(11, Rotation::CCW90);
+  matrix->setPosition(12, 0, 3);
+  matrix->setPosition(13, 1, 3);
+  matrix->setPosition(14, 2, 3);
+  matrix->setPosition(15, 3, 3); // The last display is at <3, 3>
   #endif
 
-    //matrix.setFont(&TomThumb);
-    //matrix.setFont(&FreeMono9pt7b);
-    matrix.setTextWrap(false);
-    //matrix.fillScreen(LOW);
+    //matrix->setFont(&TomThumb);
+    //matrix->setFont(&FreeMono9pt7b);
+    matrix->setTextWrap(false);
+    //matrix->fillScreen(LOW);
 
     ts.startNow();    // start scheduler
 
@@ -166,16 +159,16 @@ template <typename T> void mtxprint( const T& str, uint16_t x, uint16_t y) {
     int16_t  x1, y1;
     uint16_t w, h;
 
-    matrix.getTextBounds(str, x, y, &x1, &y1, &w, &h);
+    matrix->getTextBounds(str, x, y, &x1, &y1, &w, &h);
 
     //_SP("Text: "); _SP(w); _SP("x"); _SPLN(h);
-    //_SP("Matrix: "); _SP(matrix.width()); _SP("x"); _SPLN(matrix.height());
+    //_SP("Matrix: "); _SP(matrix->width()); _SP("x"); _SPLN(matrix->height());
 
-    matrix.fillRect(x1, y1, w, h, 0);
+    matrix->fillRect(x1, y1, w, h, 0);
 */
-    matrix.setCursor(x, y);
-    matrix.print(str);
-    matrix.write();
+    matrix->setCursor(x, y);
+    matrix->print(str);
+    matrix->write();
 }
 
 // template for display text scroller
@@ -183,19 +176,19 @@ template <typename T> void scroll( const T& str, int y, int& scrollptr) {
 
 	int16_t  x1, y1;
 	uint16_t w, h;
-	matrix.setFont();
+	matrix->setFont();
 
-	matrix.getTextBounds(str, 0, y, &x1, &y1, &w, &h);
+	matrix->getTextBounds(str, 0, y, &x1, &y1, &w, &h);
 	//_SP("Text: "); _SP(w); _SP("x"); _SPLN(h);
-	//_SP("Matrix: "); _SP(matrix.width()); _SP("x"); _SPLN(matrix.height());
+	//_SP("Matrix: "); _SP(matrix->width()); _SP("x"); _SPLN(matrix->height());
 
 	if ( scrollptr < -1*w )		// reset scroll pointer when text moves out of pane
-		scrollptr = matrix.width();
+		scrollptr = matrix->width();
 
-	matrix.fillRect(0, y, matrix.width(), y+8, 0);	// blank 1 row of 8x8 modules
-	matrix.setCursor(scrollptr--,y);
-	matrix.print(str);
-	matrix.write();
+	matrix->fillRect(0, y, matrix->width(), y+8, 0);	// blank 1 row of 8x8 modules
+	matrix->setCursor(scrollptr--,y);
+	matrix->print(str);
+	matrix->write();
 }
 
 // callback function for every second pulse task (tSecondsPulse)
@@ -210,10 +203,10 @@ void doSeconds() {
 
     lastmin = localtime(&now)->tm_min;
     uint8_t _brt = brightness_calc();
-    matrix.reset();             // reset matrix to clear possible garbage
-    matrix.setIntensity(_brt);	// set screen brightness
+    matrix->reset();             // reset matrix to clear possible garbage
+    matrix->setIntensity(_brt);	// set screen brightness
     wscroll = (bool)_brt;		    // disable weather scroll at nights
-    matrix.fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
+    matrix->fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
     bigClk();                   //simpleclk();   print time on screen
   	LOG(print, ctime(&now));    // print date/time to serial if debug
 
@@ -221,15 +214,15 @@ void doSeconds() {
       tScroller.enableIfNot();
     } else {
       tScroller.disable();
-     	matrix.setFont();
+     	matrix->setFont();
       mtxprint(sensorstr, 0, STR_SENSOR_OFFSET_Y);
     }
 }
 
 // print big font clock
 void bigClk () {
-    matrix.setFont(&mfFbsd8x16mono);
-    matrix.fillRect(0, 0, matrix.width(), CLK_FONT_HEIGHT, 0);
+    matrix->setFont(&mfFbsd8x16mono);
+    matrix->fillRect(0, 0, matrix->width(), CLK_FONT_HEIGHT, 0);
 
     char buf[3];
     sprintf(buf, "%2d", embui.timeProcessor.getHours());
@@ -245,23 +238,23 @@ bool drawticks() {
     uint16_t x = CLK_TICK_OFFSET_X;
     uint16_t y = CLK_TICK_OFFSET_Y;
     //upper tick
-    matrix.drawPixel(x++, y++, 1);
-    matrix.drawPixel(x--, y++, 1);
-    matrix.drawPixel(x++, y++, 1);
+    matrix->drawPixel(x++, y++, 1);
+    matrix->drawPixel(x--, y++, 1);
+    matrix->drawPixel(x++, y++, 1);
     //lower tick
-    matrix.drawPixel(x--, ++y, 1);
-    matrix.drawPixel(x++, ++y, 1);
-    matrix.drawPixel(x, ++y, 1);
+    matrix->drawPixel(x--, ++y, 1);
+    matrix->drawPixel(x++, ++y, 1);
+    matrix->drawPixel(x, ++y, 1);
 
-    matrix.write();
+    matrix->write();
     return true;
 }
 
 // onDisable callback func
 // clears display segments for ticks
 void clearticks() {
-	matrix.fillRect(CLK_TICK_OFFSET_X, 0, CLK_TICK_OFFSET_Y, CLK_TICK_HEIGHT, 0);
-	matrix.write();
+	matrix->fillRect(CLK_TICK_OFFSET_X, 0, CLK_TICK_OFFSET_Y, CLK_TICK_HEIGHT, 0);
+	matrix->write();
 }
 
 // update weather info via http req
@@ -502,4 +495,13 @@ void wver(AsyncWebServerRequest *request) {
 void refreshWeather(){
   tWeatherUpd.setInterval(TASK_SECOND);
   tWeatherUpd.restartDelayed();
+}
+
+  // Set matrix rotations
+void mxRotation(const int r){
+  for ( uint8_t i = 0;  i != w*h;  ++i ) {
+    //matrix->setRotation(i, embui.param(FPSTR(V_MX_W)).toInt());
+    matrix->setRotation(i, r);
+    LOG(printf, "Rotating: %d %d\n", i, r);
+  }
 }
