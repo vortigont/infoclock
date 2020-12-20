@@ -12,6 +12,8 @@ static const char V_WAPI_CITY_ID[] = "w_cid";           // Новороссий�
 static const char V_WAPI_CITY_NAME[] = "w_csn";	        // Короткое имя города для дисплея
 static const char V_W_UPD_TIME[] = "w_up_h";	        // weather update, hours
 static const char V_W_UPD_RTR[] = "w_up_r";	            // weather update, minutes
+
+// Matrix control
 static const char V_MX_W[]  = "mx_w";	                // Matrix WIDTH (number of 8x8 MAX modules)
 static const char V_MX_H[]  = "mx_h";	                // Matrix HIIGHT (number of 8x8 MAX modules)
 static const char V_MX_VF[] = "mx_vf";	                // Canvas V-flip
@@ -19,6 +21,7 @@ static const char V_MX_HF[] = "mx_hf";	                // Canvas H-flip
 static const char V_MX_OS[] = "mx_os";	                // Modules order - Serpentine
 static const char V_MX_OV[] = "mx_ov";	                // Modules order - Vertical
 static const char V_MX_MR[] = "mx_mr";	                // Module rotation
+//static const char V_MX_RST[] = "mx_rst";	            // Module rotation
 
 
 // UI blocks    - B_ prefix for 'web Block'

@@ -6,19 +6,21 @@
 
 // Main headers
 #include "main.h"
+#include "infoclock.h"
 
 // Time
 #include <time.h>                       // time() ctime()
 #include <sys/time.h>                   // struct timeval
-//-#include <sntp.h>
 extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 #include "sensors.h"
 
 #include <ESP8266HTTPClient.h>
-
-
 #include <EmbUI.h>
+
+#ifdef USE_FTP
+ #include "ftpSrv.h"
+#endif
 
 //#include <Fonts/FreeSans9pt7b.h>	//good plain
 //#include <Fonts/FreeSansBold9pt7b.h>	// good but too bold
@@ -59,7 +61,7 @@ char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
 Sensors clksensor;    // sensor object
 
 // String for weather info
-String tape = "Connecting to WiFi...";
+String tape = F("Connecting to WiFi...");
 
 // ----
 // MAIN Setup
@@ -79,46 +81,20 @@ void setup() {
   // create display object
   matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(PIN_CS, w, h));
 
-  // Set matrix rotations
-  //mxRotation(embui.param(FPSTR(V_MX_MR)).toInt());
-
-    mxPaneRotation(embui.param(FPSTR(V_MX_OS)) == FPSTR(P_true),
-        embui.param(FPSTR(V_MX_OV)) == FPSTR(P_true),
-        embui.param(FPSTR(V_MX_VF)) == FPSTR(P_true),
-        embui.param(FPSTR(V_MX_HF)) == FPSTR(P_true),
-        embui.param(FPSTR(V_MX_MR)).toInt()
-    );
-
-  // rotate pane 90 cw
-  //mxPaneRotation(embui.param(FPSTR(V_MX_CR)).toInt());
-
-/*
-  // Make pane Serpent with normal orientation
-  #ifdef MATRIX_ZIGZAG
-  // modules position (n,x,y) x,y(0,0) is from the top left corner of the pane
-  matrix->setPosition(0, 3, 0); matrix->setRotation(0, Rotation::CCW90);
-  matrix->setPosition(1, 2, 0); matrix->setRotation(1, Rotation::CCW90);
-  matrix->setPosition(2, 1, 0); matrix->setRotation(2, Rotation::CCW90);
-  matrix->setPosition(3, 0, 0); matrix->setRotation(3, Rotation::CCW90);
-  matrix->setPosition(4, 0, 1);
-  matrix->setPosition(5, 1, 1);
-  matrix->setPosition(6, 2, 1);
-  matrix->setPosition(7, 3, 1);
-  matrix->setPosition(8, 3, 2); matrix->setRotation(8, Rotation::CCW90);
-  matrix->setPosition(9, 2, 2); matrix->setRotation(9, Rotation::CCW90);
-  matrix->setPosition(10, 1, 2); matrix->setRotation(10, Rotation::CCW90);
-  matrix->setPosition(11, 0, 2); matrix->setRotation(11, Rotation::CCW90);
-  matrix->setPosition(12, 0, 3);
-  matrix->setPosition(13, 1, 3);
-  matrix->setPosition(14, 2, 3);
-  matrix->setPosition(15, 3, 3); // The last display is at <3, 3>
-  #endif
-*/
+  // restore display orientation
+  mxPaneRotation(
+    embui.param(FPSTR(V_MX_OS)).toInt(), embui.param(FPSTR(V_MX_OV)).toInt(),
+    embui.param(FPSTR(V_MX_VF)).toInt(), embui.param(FPSTR(V_MX_HF)).toInt(),
+    embui.param(FPSTR(V_MX_MR)).toInt()
+  );
 
     //matrix->setFont(&TomThumb);
     //matrix->setFont(&FreeMono9pt7b);
     matrix->setTextWrap(false);
-    //matrix->fillScreen(LOW);
+
+#ifdef USE_FTP
+    ftp_setup(); // запуск ftp-сервера
+#endif
 
     ts.startNow();    // start scheduler
 
@@ -139,6 +115,10 @@ void setup() {
 void loop() {
   embui.handle();
 	ts.execute();		// run task scheduler
+
+#ifdef USE_FTP
+    ftp_loop(); // цикл обработки событий фтп-сервера
+#endif
 } // end of main loop
 
 
@@ -182,22 +162,21 @@ template <typename T> void scroll( const T& str, int y, int& scrollptr) {
 
 // callback function for every second pulse task (tSecondsPulse)
 void doSeconds() {
-	// update clock display every new minute
-
 	tDrawTicks.restartDelayed();   //run task that draws one pulse of a ticks
 
   time(&now);
   if ( localtime(&now)->tm_min == lastmin )
     return;
 
+	// update clock display every new minute
     lastmin = localtime(&now)->tm_min;
     uint8_t _brt = brightness_calc();
     matrix->reset();             // reset matrix to clear possible garbage
-    matrix->setIntensity(_brt);	// set screen brightness
-    wscroll = (bool)_brt;		    // disable weather scroll at nights
-    matrix->fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
-    bigClk();                   //simpleclk();   print time on screen
-  	LOG(print, ctime(&now));    // print date/time to serial if debug
+    matrix->setIntensity(_brt);	 // set screen brightness
+    wscroll = (bool)_brt;		     // disable weather scroll at nights
+    matrix->fillScreen(LOW);		 // clear screen all screen (must be replaced to a clock region only)
+    bigClk();                    // print time on screen
+  	LOG(print, ctime(&now));     // print date/time to serial if debug
 
     if (wscroll){
       tScroller.enableIfNot();
@@ -481,21 +460,18 @@ void wver(AsyncWebServerRequest *request) {
   request->send(200, FPSTR(PGmimejson), buff );
 }
 
+// reschedule weather update in a second
 void refreshWeather(){
   tWeatherUpd.setInterval(TASK_SECOND);
   tWeatherUpd.restartDelayed();
 }
 
-// Set MAX modules rotations
-void mxRotation(const int r){
-  for ( uint8_t i = 0;  i != w*h;  ++i ) {
-    matrix->setRotation(i, r);
-  }
-}
 
-// Set Pane rotation
+/**
+ *  Set Pane rotation according to settings
+ */
 void mxPaneRotation(const bool serp,  const bool vert, const bool vflip, const bool hflip, const unsigned int mr){
-  LOG(printf, "Pos params: %d %d %d %d %d\n", serp, vert, vflip, hflip, mr);
+  //LOG(printf, F("PaneRotation params: %d %d %d %d %d\n"), serp, vert, vflip, hflip, mr);
 
   uint8_t x,y;
   unsigned int _mr;
@@ -506,21 +482,19 @@ void mxPaneRotation(const bool serp,  const bool vert, const bool vflip, const b
     _vflip = vflip;
     _hflip = hflip;
 
-    if ( vert ){
+    if ( vert ){          // verticaly ordered modules
       x = hflip ? w-i/h-1 : i/h;
-      if (serp && x%2){
-        _vflip = !vflip;
-        _mr = (mr+2)%4;
+      if (serp && x%2){   // for snake-shaped displays
+        _vflip = !vflip;  // invert vertical flip for odd rows
+        _mr = (mr+2)%4;   // and rotate each module 180 degrees
       }
-      //bool _vflip = (serp && x%2) ? !vflip : vflip; // V-flip every odd row
       y = _vflip ? h-i%h-1 : i%h;
-    } else {
+    } else {              // verticaly ordered modules
       y = vflip ? h-i/w-1 : i/w;
-      if (serp && y%2){
-        _hflip = !hflip;
-        _mr = (mr+2)%4;
+      if (serp && y%2){   // for snake-shaped displays
+        _hflip = !hflip;  // invert h-flip for odd rows
+        _mr = (mr+2)%4;   // and rotate each module 180 degrees
       }
-      //bool _hflip = (serp && y%2) ? !hflip : hflip; // H-flip every odd col
       x = _hflip ? w-i%w-1 : i%w;
     }
 
@@ -531,27 +505,5 @@ void mxPaneRotation(const bool serp,  const bool vert, const bool vflip, const b
     LOG(printf, "Rotating: %d %d\n", i, _mr);
   }
 
-  matrix->fillScreen(LOW);			// clear screen all screen (must be replaced to a clock region only)
-  //bigClk();                     //simpleclk();   print time on screen
-/*
-  for ( uint8_t i = 0;  i != w*h;  ++i ) {
-//    LOG(printf, "Rotating: %d %d\n", i, r);
-    switch (r) {
-      default:
-      case 0:   // normal orientation
-        matrix->setPosition(i, i%w, i/w);
-        break;
-      case 1:   // 90 CW
-        matrix->setPosition(i, i/w, (w*h-i-1)%w);
-        LOG(printf, "Canvas: %d %d %d\n", i, i/w, (w*h-i-1)%w);
-        break;
-      case 2:   // 180 CW
-        matrix->setPosition(i, w-i%w-1, h-i/h-1);
-        break;
-      case 3:   // 90 CCW
-        matrix->setPosition(i, w-i%w-1, i%w);
-        break;
-    }
-  }
-*/
+  matrix->fillScreen(LOW);			// clear screen
 }

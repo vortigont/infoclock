@@ -26,7 +26,7 @@ void create_parameters(){
      */
     embui.var_create(FPSTR(V_WAPI_KEY), "");                // API key for OpenWeather
     embui.var_create(FPSTR(V_WAPI_CITY_ID), F("519690"));   // Новороссийск - 518255, Санкт-Петербург - "519690"
-    embui.var_create(FPSTR(V_WAPI_CITY_NAME), "");          // Короткое имя города для дисплея
+    embui.var_create(FPSTR(V_WAPI_CITY_NAME), "");          // Короткое имя города для вывода
     embui.var_create(FPSTR(V_W_UPD_TIME), TOSTRING(WAPI_DEFAULT_UPDATE_TIME));	            // weather update, hours
     embui.var_create(FPSTR(V_W_UPD_RTR),  TOSTRING(WAPI_DEFAULT_RETRY_TIME));	            // weather update, minutes
     embui.var_create(FPSTR(V_MX_W), TOSTRING(MX_DEFAULT_W));	            // Matrix W
@@ -268,32 +268,12 @@ void set_matrix(Interface *interf, JsonObject *data){
     SETPARAM(FPSTR(V_MX_OV));
     SETPARAM(FPSTR(V_MX_MR));
 
-    //mxRotation((*data)[FPSTR(V_MX_MR)]);
-    //(*data)[FPSTR(TCONST_0006)] == PSTR(P_true)
-//
     mxPaneRotation(
-        (*data)[FPSTR(V_MX_OS)] == FPSTR(P_true),
-        (*data)[FPSTR(V_MX_OV)] == FPSTR(P_true),
-        (*data)[FPSTR(V_MX_VF)] == FPSTR(P_true), (*data)[FPSTR(V_MX_HF)] == FPSTR(P_true),
-        (*data)[FPSTR(V_MX_MR)].as<unsigned int>()
-    );
-//
-/*
-    mxPaneRotation((*data)[FPSTR(V_MX_OS)].as<bool>(), (*data)[FPSTR(V_MX_OV)].as<bool>(),
+        (*data)[FPSTR(V_MX_OS)].as<bool>(), (*data)[FPSTR(V_MX_OV)].as<bool>(),
         (*data)[FPSTR(V_MX_VF)].as<bool>(), (*data)[FPSTR(V_MX_HF)].as<bool>(),
-        (*data)[FPSTR(V_MX_MR)].as<bool>()
+        (*data)[FPSTR(V_MX_MR)].as<unsigned short>()
     );
-*/
-    //const char *w = (*data)[FPSTR(P_WCSSID)];    // переменные доступа в конфиге не храним
-    //const char *pwd = (*data)[FPSTR(P_WCPASS)];     // фреймворк хранит последнюю доступную точку самостоятельно
-/*
-    if(ssid){
-        embui.wifi_connect(ssid, pwd);
-    } else {
-        LOG(println, F("UI WiFi: No SSID defined!"));
-    }
-*/
-    //section_main_frame(interf, data);
+
     block_page_matrix(interf, data);
 }
 
@@ -303,7 +283,6 @@ void set_matrix(Interface *interf, JsonObject *data){
  */
 void ui_set_brightness(Interface *interf, JsonObject *data){
     if (!interf) return;
-
     //matrix->setIntensity((*data)["brt"]);
 }
 
