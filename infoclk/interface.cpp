@@ -2,13 +2,14 @@
 
 #include <EmbUI.h>
 #include "interface.h"
+#include "infoclock.h"
 
 // статический класс с готовыми формами для базовых системных натсроек
 #include "basicui.h"
 
 //uint8_t lang = LANG::RU;   // default language for text resources
 
-//extern std::unique_ptr<Max72xxPanel> matrix;
+extern Infoclock informer;
 
 /**
  * Define configuration variables and controls handlers
@@ -120,7 +121,7 @@ void block_page_clock(Interface *interf, JsonObject *data){
 
     interf->json_section_main(FPSTR(B_CLOCK), FPSTR(C_DICT[lang][CD::Clock]));
 
-    interf->range("brt", brightness_calc(), 0, 15, 1,"яркость", true);
+    interf->range("brt", informer.brightness_calc(), 0, 15, 1,"яркость", true);
     interf->button_submit(F("mxreset"), FPSTR(C_DICT[lang][CD::MX_Reset]), FPSTR(T_GRAY));
 
     interf->json_section_end(); // end of main
@@ -170,7 +171,7 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 
     interf->json_section_main(FPSTR(B_MATRIX), FPSTR(C_DICT[lang][CD::Matrix]));
 
-    interf->range("brt", brightness_calc(), 0, 15, 1,"яркость", true);
+    interf->range("brt", informer.brightness_calc(), 0, 15, 1,"яркость", true);
 
     //interf->json_section_begin(FPSTR(B_MATRIX));
     interf->json_section_line(FPSTR(A_SET_MATRIX));
@@ -233,7 +234,7 @@ void pubCallback(Interface *interf){
  * обновить погоду
  */
 void upd_weather(Interface *interf, JsonObject *data){
-    refreshWeather();
+    informer.refreshWeather();
 }
 
 /**
@@ -249,7 +250,7 @@ void set_weather(Interface *interf, JsonObject *data){
     SETPARAM(FPSTR(V_W_UPD_TIME));
     SETPARAM(FPSTR(V_W_UPD_RTR));
  
-    refreshWeather();
+    informer.refreshWeather();
 
     section_main_frame(interf, data);
 }
@@ -268,7 +269,7 @@ void set_matrix(Interface *interf, JsonObject *data){
     SETPARAM(FPSTR(V_MX_OV));
     SETPARAM(FPSTR(V_MX_MR));
 
-    mxPaneRotation(
+    informer.mxPaneRotation(
         (*data)[FPSTR(V_MX_OS)].as<bool>(), (*data)[FPSTR(V_MX_OV)].as<bool>(),
         (*data)[FPSTR(V_MX_VF)].as<bool>(), (*data)[FPSTR(V_MX_HF)].as<bool>(),
         (*data)[FPSTR(V_MX_MR)].as<unsigned short>()

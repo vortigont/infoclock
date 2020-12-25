@@ -14,8 +14,11 @@
 
 #pragma once
 
- // chars for sensors formatted data
-#define SENSOR_DATA_BUFSIZE 25
+// BME Sensor setup
+#define PRESSURE_UNITS 5        // unit: B001 = hPa, B010 = inHg, 5 = mmHg
+#define METRIC_UNITS true       // measurement units
+#define SENSOR_UPD_PERIOD 5     // Update rate in seconds
+#define SENSOR_DATA_BUFSIZE 25  // chars for sensors formatted data
 
 // List of sensor types
 static const char sname_0[] PROGMEM = "N/A";
