@@ -270,8 +270,8 @@ void set_matrix(Interface *interf, JsonObject *data){
     SETPARAM(FPSTR(V_MX_MR));
 
     informer.mxPaneRotation(
-        (*data)[FPSTR(V_MX_OS)].as<bool>(), (*data)[FPSTR(V_MX_OV)].as<bool>(),
-        (*data)[FPSTR(V_MX_VF)].as<bool>(), (*data)[FPSTR(V_MX_HF)].as<bool>(),
+        (*data)[FPSTR(V_MX_OS)].as<unsigned short>(), (*data)[FPSTR(V_MX_OV)].as<unsigned short>(),
+        (*data)[FPSTR(V_MX_VF)].as<unsigned short>(), (*data)[FPSTR(V_MX_HF)].as<unsigned short>(),
         (*data)[FPSTR(V_MX_MR)].as<unsigned short>()
     );
 

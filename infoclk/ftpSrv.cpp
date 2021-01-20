@@ -1,3 +1,5 @@
+#ifdef USE_FTP
+
 #include <ESP8266WiFi.h>
 #include <LittleFS.h>
 #include <FTPServer.h>
@@ -16,3 +18,5 @@ void ftp_setup(void){
 void ftp_loop(void){
   ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!!  
 }
+
+#endif
