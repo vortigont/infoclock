@@ -161,7 +161,9 @@ template <typename T> void Infoclock::scroll( const T& str, int y, int& scrollpt
 void Infoclock::doSeconds() {
 	tDrawTicks.restartDelayed();   //run task that draws one pulse of a ticks
 
-    static time_t now;
+  clksensor.sgp30poll();
+
+  static time_t now;
   time(&now);
   if ( localtime(&now)->tm_min == lastmin )
     return;
@@ -176,6 +178,8 @@ void Infoclock::doSeconds() {
     bigClk();                    // print time on screen
   	LOG(print, ctime(&now));     // print date/time to serial if debug
 
+
+/*
     if (wscroll){
       tScroller.enableIfNot();
     } else {
@@ -183,6 +187,7 @@ void Infoclock::doSeconds() {
      	matrix->setFont();
       mtxprint(sensorstr, 0, STR_SENSOR_OFFSET_Y);
     }
+*/
 }
 
 // print big font clock

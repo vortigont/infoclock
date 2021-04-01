@@ -22,8 +22,11 @@
 //Si7021 secsor
 #include <HTU21D.h>
 
+#include <SparkFun_SGP30_Arduino_Library.h>
+
 BME280I2C s_bme;
 HTU21D s_si7021(HTU21D_RES_RH12_TEMP14);
+SGP30 sgp30;
 
 /**
  * default constructor
@@ -41,8 +44,21 @@ Sensors::~Sensors(){}
 sensor_t Sensors::begin(){
   if (s_bme.begin()) {
     _sensor_model = s_bme.chipModel() == s_bme.ChipModel::ChipModel_BME280 ? sensor_t::bme280: sensor_t::bmp280;
+    readbme280(temp, humidity, pressure, dew);
   } else if(s_si7021.begin())  {
     _sensor_model = sensor_t::si7021;
+    readsi7021(temp, humidity);
+  }
+
+  if (sgp30.begin()){
+    issgp = true;
+    sgp30.initAirQuality();
+
+    //Convert relative humidity to absolute humidity
+    double absHumidity = RHtoAbsolute(humidity, temp);
+    //Convert the double type humidity to a fixed point 8.8bit number
+    uint16_t sensHumidity = doubleToFixedPoint(absHumidity);
+    sgp30.setHumidity(sensHumidity);
   }
 
   return _sensor_model;
@@ -61,9 +77,31 @@ void Sensors::readsi7021(float& t, float& h) {
    t = s_si7021.readTemperature(SI70xx_TEMP_READ_AFTER_RH_MEASURMENT);
 }
 
- // Update string with sensor's data
+// Update string with sensor's data
+bool Sensors::getFormattedValues(String &str){
+  char sensorstr[SENSOR_DATA_BUFSIZE];
+  bool rth = getFormattedValues(sensorstr);
+  if (rth){
+    str = String(sensorstr);
+  } else {
+    str = "";
+  }
+
+  if (!issgp)
+    return rth;
+
+  readsgp30(co2, tvoc, temp, humidity);
+  str += " CO2: ";
+  str += co2;
+  str += " ppm, tvoc: ";
+  str += tvoc;
+  str += " ppb";
+
+  return true;
+}
+
 bool Sensors::getFormattedValues(char* str) {
- 	float temp, pressure, humidity, dew = NAN;
+
     switch(_sensor_model) {
       case sensor_t::bme280 :
       case sensor_t::bmp280 :
@@ -91,6 +129,46 @@ bool Sensors::getFormattedValues(char* str) {
     }
 }
 
+void Sensors::getSensorModel(String &str){
+  char sensorstr[SENSOR_DATA_BUFSIZE];
+  getSensorModel(sensorstr);
+  str = String(sensorstr);
+}
+
 void Sensors::getSensorModel(char* str){
   snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("Sensor model: %s"), sensor_types[(uint8_t)_sensor_model]);
+}
+
+
+void Sensors::sgp30poll(){
+  sgp30.measureAirQuality(); 
+}
+
+void Sensors::readsgp30(uint16_t &co2, uint16_t &tvoc, const float rh, const float t){
+  //sgp30.measureAirQuality();
+  co2 = sgp30.CO2;
+  tvoc = sgp30.TVOC;
+
+//
+    //Convert relative humidity to absolute humidity
+    double absHumidity = RHtoAbsolute(humidity, temp);
+    //Convert the double type humidity to a fixed point 8.8bit number
+    uint16_t sensHumidity = doubleToFixedPoint(absHumidity);
+    sgp30.setHumidity(sensHumidity);
+//
+}
+
+
+double Sensors::RHtoAbsolute (float relHumidity, float tempC) {
+  double eSat = 6.11 * pow(10.0, (7.5 * tempC / (237.7 + tempC)));
+  double vaporPressure = (relHumidity * eSat) / 100; //millibars
+  double absHumidity = 1000 * vaporPressure * 100 / ((tempC + 273) * 461.5); //Ideal gas law with unit conversions
+  return absHumidity;
+}
+
+uint16_t Sensors::doubleToFixedPoint( double number) {
+  int power = 1 << 8;
+  double number2 = number * power;
+  uint16_t value = floor(number2 + 0.5);
+  return value;
 }

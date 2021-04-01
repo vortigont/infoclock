@@ -34,15 +34,28 @@ enum class sensor_t{NA, bme280, bmp280, si7021};
 
 class Sensors {
 private:
+
+ 	float temp, pressure, humidity, dew = NAN;
+  uint16_t co2, tvoc;
+  sensor_t _sensor_model = sensor_t::NA;
+  bool issgp = false;
+
   void readbme280(float& t, float& h, float& p, float& dew);
   void readsi7021(float& t, float& h);
-  sensor_t _sensor_model = sensor_t::NA;
-
+  static uint16_t doubleToFixedPoint( double number);
 
 public:
-   Sensors();
-   virtual ~Sensors();
-   sensor_t begin();
-   bool getFormattedValues( char* str);
-   void getSensorModel(char* str);
+  Sensors();
+  virtual ~Sensors();
+  sensor_t begin();
+  bool getFormattedValues( char* str);
+  bool getFormattedValues( String &str);
+
+  void getSensorModel(char* str);
+  void getSensorModel(String &str);
+
+  void sgp30poll();
+  void readsgp30(uint16_t &co2, uint16_t &tvoc, const float rh, const float t);
+
+  static double RHtoAbsolute (float relHumidity, float tempC);
 };

@@ -72,7 +72,8 @@ private:
     String tape;
 
     // Sensors
-    char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
+    String sensorstr;
+    //char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
 
 
     Sensors clksensor;    // sensor object
