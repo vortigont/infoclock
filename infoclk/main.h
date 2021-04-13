@@ -19,7 +19,8 @@
 #include "config.h"
 #include "uistrings.h"  // non-localized text-strings
 #include "ui_i18n.h"    // localized GUI text-strings
-
+#include "ts.h"         // task scheduler
+#include <ESPAsyncWebServer.h>
 
 #define UPD_RESTART_DELAY   5   // restart delay when updating firmware
 #define BAUD_RATE	115200	// serial debug port baud rate
@@ -27,12 +28,6 @@
 // PROGMEM strings
 // sprintf template for json version data
 static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%u,}";
-
-// Task Scheduler lib	https://github.com/arkhipenko/TaskScheduler
-#define _TASK_SLEEP_ON_IDLE_RUN
-#define _TASK_STD_FUNCTION   // Compile with support for std::function 
-#define _TASK_SCHEDULING_OPTIONS
-#include <TaskSchedulerDeclarations.h>
 
 // TaskScheduler
 //Let the runner object be a global, single instance shared between object files.
@@ -47,4 +42,5 @@ void espreboot(void);
 void onSTAGotIP();
 // Manage network disconnection
 void onSTADisconnected();
-
+// firmware version
+void wver(AsyncWebServerRequest *request);

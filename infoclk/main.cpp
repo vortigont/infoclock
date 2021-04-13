@@ -18,7 +18,7 @@
 extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 // Global Task Scheduler
-Scheduler ts;
+//extern Scheduler ts;
 // Our instance of Infoclock
 Infoclock informer;
 
@@ -45,18 +45,20 @@ void setup() {
     embui.param(FPSTR(V_MX_MR)).toInt()
   );
 
+  embui.server.on(PSTR("/fw"), HTTP_GET, [](AsyncWebServerRequest *request){
+    wver(request);
+  });
+
+
 #ifdef USE_FTP
     ftp_setup(); // запуск ftp-сервера
 #endif
-
-  ts.startNow();    // start scheduler
 }
 
 
 // MAIN loop
 void loop() {
   embui.handle();
-	ts.execute();		// run task scheduler
 
 #ifdef USE_FTP
     ftp_loop(); // цикл обработки событий фтп-сервера
@@ -90,8 +92,6 @@ void espreboot() {
 // send HTTP responce, json with controller/fw versions and status info
 void wver(AsyncWebServerRequest *request) {
   char buff[HTTP_VER_BUFSIZE];
-  //char* firmware = (char*) malloc(strlen_P(PGver)+1);
-  //strcpy_P(firmware, PGver);
   timespec tp;
   clock_gettime(0, &tp);
 

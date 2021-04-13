@@ -96,7 +96,6 @@ void section_main_frame(Interface *interf, JsonObject *data){
 void block_menu(Interface *interf, JsonObject *data){
     if (!interf) return;
     // создаем меню
-    embui.autoSaveReset(); // автосохранение конфига будет отсчитываться от этого момента
     interf->json_section_menu();    // открываем секцию "меню"
 
     interf->option(FPSTR(B_CLOCK),   FPSTR(C_DICT[lang][CD::Clock]));           // пункт меню "часы"
@@ -151,8 +150,8 @@ void block_page_weather(Interface *interf, JsonObject *data){
     interf->text(FPSTR(V_WAPI_CITY_ID), FPSTR(C_DICT[lang][CD::WthCID]));           // city-id for weather API
     interf->text(FPSTR(V_WAPI_CITY_NAME), FPSTR(C_DICT[lang][CD::WthSrtName]));     // city short name
 
-    interf->text(FPSTR(V_W_UPD_TIME), F("weather update, hours"));          // weather update, hours
-    interf->text(FPSTR(V_W_UPD_RTR), F(" weather update, min"));            // weather update, minutes
+    interf->text(FPSTR(V_W_UPD_TIME), F("интервал обновления, ч."));          // weather update, hours
+    interf->text(FPSTR(V_W_UPD_RTR), F("повтор при ошибке, мин."));            // weather update, minutes
 
     interf->button_submit(FPSTR(A_SET_WEATHER), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(T_GRAY));
     interf->json_section_end();
@@ -171,9 +170,8 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 
     interf->json_section_main(FPSTR(B_MATRIX), FPSTR(C_DICT[lang][CD::Matrix]));
 
-    interf->range("brt", informer.brightness_calc(), 0, 15, 1,"яркость", true);
+    interf->range(F("brt"), informer.brightness_calc(), 0, 15, 1, F("яркость"), true);
 
-    //interf->json_section_begin(FPSTR(B_MATRIX));
     interf->json_section_line(FPSTR(A_SET_MATRIX));
 
     interf->text(FPSTR(V_MX_W), FPSTR(F("Panel Width")));        // Num of modules W
@@ -189,15 +187,12 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 	 *   3: 90 degrees counter clockwise
 	 */
     interf->select(FPSTR(V_MX_MR), embui.param(FPSTR(V_MX_MR)), F("MAX Module rotation"), false, false);
-    interf->option("0", F("No rotation"));
-    interf->option("1", F("90 CW"));
-    interf->option("2", F("180 CW"));
-    interf->option("3", F("90 CCW"));
+    interf->option(1, F("No rotation"));
+    interf->option(2, F("90 CW"));
+    interf->option(3, F("180 CW"));
+    interf->option(4, F("90 CCW"));
     interf->json_section_end();
 
-    //interf->text(FPSTR(V_MX_R), FPSTR(F("Matrix Rotaion")));      // Modules rotation
-
-    //interf->checkbox(FPSTR(TCONST_001A), myLamp.isLampOn()? FPSTR(TCONST_FFFF) : FPSTR(TCONST_FFFE), FPSTR(TINTF_00E), true);
     interf->json_section_end();     // end of line
 
     interf->json_section_line(FPSTR(A_SET_MATRIX));
