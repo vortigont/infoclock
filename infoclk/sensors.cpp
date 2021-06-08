@@ -22,6 +22,7 @@
 //Si7021 secsor
 #include <HTU21D.h>
 
+// SGP30 gas sensor
 #include <SparkFun_SGP30_Arduino_Library.h>
 
 BME280I2C s_bme;
@@ -90,6 +91,7 @@ bool Sensors::getFormattedValues(String &str){
   if (!issgp)
     return rth;
 
+  // add air quality
   readsgp30(co2, tvoc, temp, humidity);
   str += " CO2: ";
   str += co2;
@@ -141,21 +143,24 @@ void Sensors::getSensorModel(char* str){
 
 
 void Sensors::sgp30poll(){
+  if (!issgp)
+    return;
   sgp30.measureAirQuality(); 
 }
 
 void Sensors::readsgp30(uint16_t &co2, uint16_t &tvoc, const float rh, const float t){
-  //sgp30.measureAirQuality();
+  if (!issgp)
+    return;
+  // read current values
   co2 = sgp30.CO2;
   tvoc = sgp30.TVOC;
 
-//
-    //Convert relative humidity to absolute humidity
-    double absHumidity = RHtoAbsolute(humidity, temp);
-    //Convert the double type humidity to a fixed point 8.8bit number
-    uint16_t sensHumidity = doubleToFixedPoint(absHumidity);
-    sgp30.setHumidity(sensHumidity);
-//
+  // Update sensor with humi data
+  //Convert relative humidity to absolute humidity
+  double absHumidity = RHtoAbsolute(rh, t);
+  //Convert the double type humidity to a fixed point 8.8bit number
+  uint16_t sensHumidity = doubleToFixedPoint(absHumidity);
+  sgp30.setHumidity(sensHumidity);
 }
 
 

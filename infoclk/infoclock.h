@@ -45,15 +45,16 @@ public:
     // Task Callback methods prototypes
     void refreshWeather();  // restart weather timer
     void mxPaneRotation(const bool serp,  const bool vert, const bool vflip, const bool hflip, const int mr=0);
-    //void mxPaneRotation(const int r);   // canvas rotation
+
     // Display manipulation functions
     uint8_t brightness_calc(void);		// calculate display brightness for current time of day
 
-
     // set panel dimensions
     void setDimensions(const int16_t _x, const int16_t _y){
-        if (_x && _y)   // I do not need negatives here
+        // I do not need negatives here
+        if (_x && _y){
             w = _x; h = _y;
+        }
         // to-do: recreate display object here
     }
 
@@ -73,7 +74,6 @@ private:
 
     // Sensors
     String sensorstr;
-    //char sensorstr[SENSOR_DATA_BUFSIZE];      // sensor data
 
 
     Sensors clksensor;    // sensor object

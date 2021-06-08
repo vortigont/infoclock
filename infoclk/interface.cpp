@@ -187,10 +187,10 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 	 *   3: 90 degrees counter clockwise
 	 */
     interf->select(FPSTR(V_MX_MR), embui.param(FPSTR(V_MX_MR)), F("MAX Module rotation"), false, false);
-    interf->option(1, F("No rotation"));
-    interf->option(2, F("90 CW"));
-    interf->option(3, F("180 CW"));
-    interf->option(4, F("90 CCW"));
+    interf->option("1", F("No rotation"));
+    interf->option("2", F("90 CW"));
+    interf->option("3", F("180 CW"));
+    interf->option("4", F("90 CCW"));
     interf->json_section_end();
 
     interf->json_section_end();     // end of line

@@ -18,14 +18,13 @@
 extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 // Global Task Scheduler
-//extern Scheduler ts;
 // Our instance of Infoclock
 Infoclock informer;
 
 // ----
 // MAIN Setup
 void setup() {
-  Serial.begin(BAUD_RATE);	    // start hw serial for debugging
+  Serial.begin(BAUD_RATE);
   LOG(println, F("Starting InfoClock..."));
 
   // цепляем крючки наших обработчиков на WiFi события от фреймворка
@@ -108,5 +107,3 @@ void wver(AsyncWebServerRequest *request) {
 
   request->send(200, FPSTR(PGmimejson), buff );
 }
-
-

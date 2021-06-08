@@ -71,7 +71,6 @@ void Infoclock::init(const int16_t _x, const int16_t _y){
   ts.addTask(tDrawTicks);
 
   if (clksensor.begin() == sensor_t::NA) {
-    //ts.deleteTask(tSensorUpd);
     updsensstr();
   } else {
     ts.addTask(tSensorUpd);
@@ -169,14 +168,14 @@ void Infoclock::doSeconds() {
     return;
 
 	// update clock display every new minute
-    lastmin = localtime(&now)->tm_min;
-    uint8_t _brt = brightness_calc();
-    matrix->reset();             // reset matrix to clear possible garbage
-    matrix->setIntensity(_brt);	 // set screen brightness
-    wscroll = (bool)_brt;		     // disable weather scroll at nights
-    matrix->fillScreen(LOW);		 // clear screen all screen (must be replaced to a clock region only)
-    bigClk();                    // print time on screen
-  	LOG(print, ctime(&now));     // print date/time to serial if debug
+  lastmin = localtime(&now)->tm_min;
+  uint8_t _brt = brightness_calc();
+  matrix->reset();             // reset matrix to clear possible garbage
+  matrix->setIntensity(_brt);	 // set screen brightness
+  wscroll = (bool)_brt;		     // disable weather scroll at nights
+  matrix->fillScreen(LOW);		 // clear screen all screen (must be replaced to a clock region only)
+  bigClk();                    // print time on screen
+  LOG(print, ctime(&now));     // print date/time to serial if debug
 
 
 /*
@@ -203,7 +202,6 @@ void Infoclock::bigClk () {
 }
 
 
-// onEnable callback func, must retrun true
 // Draw hh:mm ticks
 bool Infoclock::drawticks() {
     uint16_t x = CLK_TICK_OFFSET_X;
@@ -221,7 +219,6 @@ bool Infoclock::drawticks() {
     return true;
 }
 
-// onDisable callback func
 // clears display segments for ticks
 void Infoclock::clearticks() {
 	matrix->fillRect(CLK_TICK_OFFSET_X, 0, CLK_TICK_OFFSET_Y, CLK_TICK_HEIGHT, 0);

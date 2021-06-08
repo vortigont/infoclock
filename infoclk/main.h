@@ -8,7 +8,7 @@
  *  This file        : main.h
  *  This file Author : Emil Muratow
  *
- *  Description      : Common includes and defines required by whole project
+ *  Description      : Common includes and defines
  *  (c) Emil Muratov 2017
  *
  */

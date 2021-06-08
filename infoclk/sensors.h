@@ -25,12 +25,13 @@ static const char sname_0[] PROGMEM = "N/A";
 static const char sname_1[] PROGMEM = "BME280";
 static const char sname_2[] PROGMEM = "BMP280";
 static const char sname_3[] PROGMEM = "Si7021";
+static const char sname_4[] PROGMEM = "SGP30";
 
 //Table of sensor names
-const char* const sensor_types[] PROGMEM = { sname_0, sname_1, sname_2, sname_3 };
+const char* const sensor_types[] PROGMEM = { sname_0, sname_1, sname_2, sname_3, sname_4 };
 
 // sensors type enum
-enum class sensor_t{NA, bme280, bmp280, si7021};
+enum class sensor_t{NA, bme280, bmp280, si7021, sgp30};
 
 class Sensors {
 private:
