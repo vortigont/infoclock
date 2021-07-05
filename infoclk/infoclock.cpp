@@ -162,13 +162,11 @@ void Infoclock::doSeconds() {
 
   clksensor.sgp30poll();
 
-  static time_t now;
-  time(&now);
-  if ( localtime(&now)->tm_min == lastmin )
+  if ( TimeProcessor::getInstance().getMinutes() == lastmin )
     return;
 
 	// update clock display every new minute
-  lastmin = localtime(&now)->tm_min;
+  lastmin = TimeProcessor::getInstance().getMinutes();
   uint8_t _brt = brightness_calc();
   matrix->reset();             // reset matrix to clear possible garbage
   matrix->setIntensity(_brt);	 // set screen brightness
