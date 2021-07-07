@@ -1,0 +1,5 @@
+*.ino text
+*.tpl text
+
+*.ino linguist-language=C++
+*.ino diff=cpp

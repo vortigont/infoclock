@@ -1,0 +1,79 @@
+// Default options
+// rename this file to config.h and make your changes
+
+// firmware version
+#define FW_VER "infoclk_1.2.0"
+
+// Enable debug messages via hw serail port0
+//#define _CLKDEBUG_
+
+
+// Matrix setup
+#define PIN_CS D0          // SPI CS pin
+#define MATRIX_W 4         // Num of matrixes (horizontal)
+#define MATRIX_H 4         // Num of matrixes (vertical)
+//#define MATRIX_ROTATION 1  // Matrix module orientation
+//#define MATRIX_PANEROT 1			// rotate pane 1 - 90 cw,
+
+// WiFi self AP-mode default SSID
+// Defined automaticaly as "infoclk_[ChipID]"
+#define WIFI_DEF_HOSTNAME "infoclk"
+
+// WiFi self AP-mode default password (15 chars max)
+#define WIFI_DEF_PASSWD "infoclk"
+
+
+// NTP Options
+#define NTP_SERVER  "192.168.168.2"
+#define NTP_INTERVAL  3600
+
+// TimeZone offset in hours
+#define TZ 3
+// daylight saving
+#define TZ_DL false
+
+
+// OTA updates options
+#define OTA_URL "http://emil-nb/esp/infoclk.bin"
+#define OTA_VER FW_VER
+// curl -v -X POST http://infoclk/update -F 'name=@.pioenvs/stable/firmware.bin'
+
+// BME Sensor setup
+#define PRESSURE_UNITS 5        // unit: B001 = hPa, B010 = inHg, 5 = mmHg
+#define METRIC_UNITS true       // measurement units
+#define SENSOR_UPD_PERIOD 5     // Update rate in seconds
+
+
+#define WAPI_URL http://api.openweathermap.org/data/2.5/weather
+#define WAPI_KEY 12345
+#define WAPI_CITY_ID 519690	// Санкт-Петербург
+#define WAPI_CITY_NAME "В СпБ "	// Короткое имя для дисплея
+
+#define WAPI_REQ "WAPI_URL?id=WAPI_CITY_ID&units=metric&lang=ru&APPID=WAPI_KEY"
+
+#define WEATHER_UPD_PERIOD 2	// weather update (hours)
+#define WEATHER_UPD_RETRY 10	// weather update retry if http error (minutes)
+
+
+// some constants
+#define MIN_BRIGHTNESS 0
+#define MAX_BRIGHTNESS 10
+#define MAX_BRT_HOUR_START 11
+#define MAX_BRT_HOUR_END 18
+#define MIN_BRT_HOUR_START 24
+#define MIN_BRT_HOUR_END 6
+
+#define TICKS_TIME 250
+#define SCROLL_RATE 50
+
+// strings position
+#define STR_SENSOR_OFFSET_Y 15
+#define STR_WEATHER_OFFSET_Y 25
+
+#define CLK_FONT_HEIGHT 12
+#define CLK_FONT_OFFSET_Y 13
+#define CLK_MINUTE_OFFSET_X 17
+
+#define CLK_TICK_OFFSET_X 15
+#define CLK_TICK_OFFSET_Y 2
+#define CLK_TICK_HEIGHT 10
