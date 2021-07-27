@@ -27,8 +27,8 @@
 
 
 // NTP Options
-+#define TZONE TZ_Europe_Moscow // Zones defined in cores/esp8266/TZ.h
-+#define COUNTRY "ru"           // Country double-letter code
+#define TZONE TZ_Europe_Moscow // Zones defined in cores/esp8266/TZ.h
+#define COUNTRY "ru"           // Country double-letter code
 
 // OTA updates options
 #define OTA_URL "http://emil-nb/esp/infoclk.bin"
@@ -40,7 +40,7 @@
 #define SENSOR_UPD_PERIOD 5     // Update rate in seconds
 
 
-#define WAPI_URL http://api.openweathermap.org/data/2.5/weather
+#define WAPI_URL "http://api.openweathermap.org/data/2.5/weather"
 #define WAPI_KEY 12345
 #define WAPI_CITY_ID 519690	// Санкт-Петербург
 #define WAPI_CITY_NAME "В СпБ "	// Короткое имя для дисплея

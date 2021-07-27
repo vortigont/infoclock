@@ -25,6 +25,8 @@
 #define UPD_RESTART_DELAY   5   // restart delay when updating firmware
 #define BAUD_RATE	115200	// serial debug port baud rate
 
+#define HTTP_VER_BUFSIZE 200
+
 // PROGMEM strings
 // sprintf template for json version data
 static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%u,}";

@@ -55,7 +55,7 @@ void Infoclock::init(const int16_t _x, const int16_t _y){
   //matrix->setFont(&FreeMono9pt7b);
   matrix->setTextWrap(false);
 
-  tWeatherUpd.set(WAPI_DEFAULT_UPDATE_TIME * TASK_HOUR, TASK_FOREVER, std::bind(&Infoclock::GetWeather, this));
+  tWeatherUpd.set(WEATHER_UPD_PERIOD * TASK_HOUR, TASK_FOREVER, std::bind(&Infoclock::GetWeather, this));
   tSensorUpd.set(SENSOR_UPD_PERIOD * TASK_SECOND, TASK_FOREVER, std::bind(&Infoclock::updsensstr, this));
   tDrawTicks.set(TICKS_TIME, TASK_ONCE, NULL, std::bind(&Infoclock::drawticks, this), std::bind(&Infoclock::clearticks, this));
 
@@ -173,7 +173,7 @@ void Infoclock::doSeconds() {
   wscroll = (bool)_brt;		     // disable weather scroll at nights
   matrix->fillScreen(LOW);		 // clear screen all screen (must be replaced to a clock region only)
   bigClk();                    // print time on screen
-  LOG(print, ctime(&now));     // print date/time to serial if debug
+  LOG(print, ctime(TimeProcessor::getInstance().now()));     // print date/time to serial if debug
 
 
 /*

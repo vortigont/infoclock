@@ -28,8 +28,8 @@ void create_parameters(){
     embui.var_create(FPSTR(V_WAPI_KEY), "");                // API key for OpenWeather
     embui.var_create(FPSTR(V_WAPI_CITY_ID), F("519690"));   // Новороссийск - 518255, Санкт-Петербург - "519690"
     embui.var_create(FPSTR(V_WAPI_CITY_NAME), "");          // Короткое имя города для вывода
-    embui.var_create(FPSTR(V_W_UPD_TIME), TOSTRING(WAPI_DEFAULT_UPDATE_TIME));	            // weather update, hours
-    embui.var_create(FPSTR(V_W_UPD_RTR),  TOSTRING(WAPI_DEFAULT_RETRY_TIME));	            // weather update, minutes
+    embui.var_create(FPSTR(V_W_UPD_TIME), TOSTRING(WEATHER_UPD_PERIOD));    // weather update, hours
+    embui.var_create(FPSTR(V_W_UPD_RTR),  TOSTRING(WEATHER_UPD_RETRY));	    // weather update, minutes
     embui.var_create(FPSTR(V_MX_W), TOSTRING(MX_DEFAULT_W));	            // Matrix W
     embui.var_create(FPSTR(V_MX_H), TOSTRING(MX_DEFAULT_H));	            // Matrix H
     embui.var_create(FPSTR(V_MX_MR), TOSTRING(MX_DEFAULT_MR));	            // Matrix Rotation
