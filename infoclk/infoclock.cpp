@@ -20,7 +20,6 @@
 // Time
 #include <time.h>                       // time() ctime()
 #include <sys/time.h>                   // struct timeval
-//extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 
 // Parola lib
@@ -29,6 +28,12 @@
 // Defines
 #define WEATHER_INIT_DELAY 20   // seconds to delay weather update after WiFi connection 
 #define WEATHER_API_BUFSIZE 1024
+
+
+#define UNICODE_CP1251_OFFSET_D0 0x2f   // symbol offset is 0x30, but font index adds -1
+#define UNICODE_CP1251_OFFSET_D1 0x6f   // symbol offset is 0x70, but font index adds -1
+
+
 // weather API URL
 static const char PGwapireq1[] PROGMEM = WAPI_URL "?id=";
 static const char PGwapireq2[] PROGMEM = "&units=metric&lang=" COUNTRY "&APPID=";   // WAPI_KEY;
@@ -86,7 +91,7 @@ void Infoclock::init(const int16_t _x, const int16_t _y){
 /**
  *  Set Pane rotation according to settings
  */
-void Infoclock::mxPaneRotation(const bool serp,  const bool vert, const bool vflip, const bool hflip, const int mr){
+void Infoclock::mxPaneSetup(const bool serp,  const bool vert, const bool vflip, const bool hflip, const int mr){
 
   LOG(printf_P, PSTR("Change PaneRotation params: serpentine=%d, vertical=%d, v-flip=%d, h-flip=%d, rot=%d\n"), serp, vert, vflip, hflip, mr);
 
@@ -243,7 +248,7 @@ void Infoclock::GetWeather(){
   	int httpCode = httpreq.GET();
 	  if( httpCode == HTTP_CODE_OK ){
 		  String respdata = httpreq.getString();
-		  ParseWeather(respdata);
+		  parseWeather(respdata);
 		  tWeatherUpd.setInterval(embui.param(FPSTR(V_W_UPD_TIME)).toInt() * TASK_HOUR);
   	} else {
 	  	LOG(print, F("Weather update code: "));
@@ -262,49 +267,49 @@ void Infoclock::updsensstr(){
 }
 
 // получить строку для дисплея из json-ответа
-void Infoclock::ParseWeather(String result){
+void Infoclock::parseWeather(String& result){
   DynamicJsonDocument root(WEATHER_API_BUFSIZE);
   DeserializationError error = deserializeJson(root, result);
-  result = "";
+  result.clear();
 
   if (error){
   	LOG(print, F("Json parsing failed! Error: "));
   	LOG(println, error.c_str());
-	  tape = F("погода недоступна: ");
-    tape += error.c_str();
-    tape = utf8rus(tape);
+    weather = F("погода недоступна: ");
+    weather += error.c_str();
+    utf8toCP1251(weather, tape);
     return;
   }
 
 // Погода
-   tape = embui.param(FPSTR(V_WAPI_CITY_NAME));
-   tape += root[F("weather")][0][F("description")].as<String>();
-   tape += ", ";
+   weather = embui.param(FPSTR(V_WAPI_CITY_NAME));
+   weather += root[F("weather")][0][F("description")].as<String>();
+   weather += ", ";
 // Температура
-   int t = root["main"]["temp"].as<int>();
-   tape += String(t);
+   weather += root["main"]["temp"].as<String>();
+
 // Влажность
-   tape += ", H:";
-   tape += root["main"]["humidity"].as<String>();
+   weather += ", H:";
+   weather += root["main"]["humidity"].as<String>();
 // Ветер
-   tape += "% Ветер ";
+   weather += "% Ветер ";
    double deg = root["wind"]["deg"];
-   if( deg >22.5 && deg <=67.5 )tape += "сев-вост ";
-   else if( deg >67.5 && deg <=112.5 )tape += "вост. ";
-   else if( deg >112.5 && deg <=157.5 )tape += "юг-вост ";
-   else if( deg >157.5 && deg <=202.5 )tape += "юж. ";
-   else if( deg >202.5 && deg <=247.5 )tape += "юг-зап ";
-   else if( deg >247.5 && deg <=292.5 )tape += "зап. ";
-   else if( deg >292.5 && deg <=337.5 )tape += "сев-зап ";
-   else tape += "сев,";
-   tape += root["wind"]["speed"].as<String>();
-   tape += " м/с";
+   if( deg >22.5 && deg <=67.5 ) weather += "сев-вост ";
+   else if( deg >67.5 && deg <=112.5 ) weather += "вост. ";
+   else if( deg >112.5 && deg <=157.5 ) weather += "юг-вост ";
+   else if( deg >157.5 && deg <=202.5 ) weather += "юж. ";
+   else if( deg >202.5 && deg <=247.5 ) weather += "юг-зап ";
+   else if( deg >247.5 && deg <=292.5 ) weather += "зап. ";
+   else if( deg >292.5 && deg <=337.5 ) weather += "сев-зап ";
+   else weather += "сев,";
+   weather += root["wind"]["speed"].as<String>();
+   weather += " м/с";
 
    LOG(print, F("Weather: "));
-   LOG(println, tape);
+   LOG(println, weather);
 
   // Перекодируем из UNICODE в кодировку дисплейного шрифта
-  tape = utf8rus(tape);
+  utf8toCP1251(weather, tape);
 }
 
 
@@ -331,77 +336,42 @@ void Infoclock::panescroller(void){
 	if ( wscroll ) scroll(tape, STR_WEATHER_OFFSET_Y, strp2);
 }
 
-/* Recode russian fonts from UTF-8 to Windows-1251 */
-// http://arduino.ru/forum/programmirovanie/rusifikatsiya-biblioteki-adafruit-gfx-i-vyvod-russkikh-bukv-na-displei-v-kodi
-String Infoclock::utf8toCP1251(String source)
-{
-  int i,k;
-  String target;
-  unsigned char n;
-  char m[2] = { '0', '\0' };
+/* Recode russian string from UTF-8 to CP-1251 LCD Font
+   http://arduino.ru/forum/programmirovanie/rusifikatsiya-biblioteki-adafruit-gfx-i-vyvod-russkikh-bukv-na-displei-v-kodi
+   https://i.voenmeh.ru/kafi5/Kam.loc/inform/UTF-8.htm
+*/
+bool Infoclock::utf8toCP1251(const String& source, String& dst, bool concat){
+  unsigned int i =0, t=0, k = source.length();
+  char *buff = (char *)malloc( (k+1) * sizeof *buff );
+  if (!buff)
+    return false;
 
-  k = source.length(); i = 0;
+  unsigned char n;
 
   while (i < k) {
-    n = source[i]; i++;
-
-    if (n >= 0xC0) {
-      switch (n) {
-        case 0xD0: {
-          n = source[i]; i++;
-          if (n == 0x81) { n = 0xA8; break; }
-          if (n >= 0x90 && n <= 0xBF) n = n + 0x30;
-	    //if (n >= 0x90 && n <= 0xBF) n = n + 0x2f;
-          break;
-        }
-        case 0xD1: {
-          n = source[i]; i++;
-          if (n == 0x91) { n = 0xB8; break; }
-          if (n >= 0x80 && n <= 0x8F) n = n + 0x70;
-          //if (n >= 0x80 && n <= 0x8F) n = n + 0x6f;
-          break;
-        }
+    n = source[i++];
+    switch (n) {
+      case 0xD0: {
+        n = source[i++];
+        if (n == 0x81) { n = 0xA8; break; }    // 0xd081 U+0401  'Ё' => cp1251 0xa8
+        if (n > 0x8F && n < 0xC0) n += UNICODE_CP1251_OFFSET_D0;    // +47
+        break;
+      }
+      case 0xD1: {
+        n = source[i++];
+        if (n == 0x91) { n = 0xB8; break; }       // 0xd191 U+0451  'ё' => cp1251 0xb8
+        if (n > 0x7f && n < 0x90) n += UNICODE_CP1251_OFFSET_D1;    // +111
+        break;
       }
     }
-    m[0] = n; target = target + String(m);
+
+    buff[t++] = n;
   }
-return target;
-}
 
-
-/* Recode russian fonts from UTF-8 to HZ LCD Font */
-// http://arduino.ru/forum/programmirovanie/rusifikatsiya-biblioteki-adafruit-gfx-i-vyvod-russkikh-bukv-na-displei-v-kodi
-String Infoclock::utf8rus(String source)
-{
-  int i,k;
-  String target;
-  unsigned char n;
-  char m[2] = { '0', '\0' };
-
-  k = source.length(); i = 0;
-
-  while (i < k) {
-    n = source[i]; i++;
-
-    if (n >= 0xC0) {
-      switch (n) {
-        case 0xD0: {
-          n = source[i]; i++;
-	    if (n == 0x81) { n = 0xA8; break; }
-	    if (n >= 0x90 && n <= 0xBF) n = n + 0x2f;
-          break;
-        }
-        case 0xD1: {
-          n = source[i]; i++;
-          if (n == 0x91) { n = 0xB8; break; }
-          if (n >= 0x80 && n <= 0x8F) n = n + 0x6f;
-          break;
-        }
-      }
-    }
-    m[0] = n; target = target + String(m);
-  }
-return target;
+  buff[t] = '\0';
+  concat ? dst += buff : dst = buff;
+  delete buff;
+  return true;
 }
 
 
@@ -430,3 +400,8 @@ void Infoclock::onNetIfDown(){
     tWeatherUpd.disable();
     tape=F("No Internet connection");
 };
+
+// Set display brightness, returns resulting brightness
+void Infoclock::brightness(const uint8_t b){
+  return matrix->setIntensity(b > MAX_BRIGHTNESS ? MAX_BRIGHTNESS : b);
+}

@@ -74,22 +74,25 @@ void Sensors::readbme280(float& t, float& h, float& p, float& dew) {
  }
 
 void Sensors::readsi7021(float& t, float& h) {
-   h = s_si7021.readHumidity();
-   t = s_si7021.readTemperature(SI70xx_TEMP_READ_AFTER_RH_MEASURMENT);
+  h = s_si7021.readHumidity();
+  // try to reset sensor on read error
+  if ( h == 255.0 ){
+    s_si7021.softReset();
+    s_si7021.setResolution(HTU21D_RES_RH12_TEMP14);
+  }
+
+  t = s_si7021.readTemperature(SI70xx_TEMP_READ_AFTER_RH_MEASURMENT);
 }
 
 // Update string with sensor's data
 bool Sensors::getFormattedValues(String &str){
   char sensorstr[SENSOR_DATA_BUFSIZE];
-  bool rth = getFormattedValues(sensorstr);
-  if (rth){
-    str = String(sensorstr);
-  } else {
-    str = "";
-  }
+  getFormattedValues(sensorstr);
+
+  str = sensorstr;
 
   if (!issgp)
-    return rth;
+    return true;
 
   // add air quality
   readsgp30(co2, tvoc, temp, humidity);
@@ -113,32 +116,26 @@ bool Sensors::getFormattedValues(char* str) {
               case BME280::ChipModel_BME280:
                 snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f Rh:%.f%% P:%.fmmHg"), temp, humidity, pressure);
                 return true;
-              case BME280::ChipModel_BMP280:
+              default:
+              //case BME280::ChipModel_BMP280:
                 snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f P:%.fmmHg"), temp, pressure);
                 return true;
-              default:
-                return false;
             }
-
-            break;
       case sensor_t::si7021 :
             readsi7021(temp, humidity);
             snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f Rh:%.f%%"), temp, humidity);
             return true;
       default:
-            snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("No sensors found!"));
+            snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("Temp sensor err!"));
             return false;
     }
 }
 
 void Sensors::getSensorModel(String &str){
-  char sensorstr[SENSOR_DATA_BUFSIZE];
-  getSensorModel(sensorstr);
-  str = String(sensorstr);
-}
-
-void Sensors::getSensorModel(char* str){
-  snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("Sensor model: %s"), sensor_types[(uint8_t)_sensor_model]);
+  str = F("Sensors: ");
+  str += sensor_types[(uint8_t)_sensor_model];
+  if (issgp)
+    str += F(", SGP30");
 }
 
 

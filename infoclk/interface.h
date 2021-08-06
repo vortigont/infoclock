@@ -5,6 +5,7 @@ void block_menu(Interface *interf, JsonObject *data);
 void block_page_clock(Interface *interf, JsonObject *data);
 void block_page_weather(Interface *interf, JsonObject *data);
 void block_page_matrix(Interface *interf, JsonObject *data);
+void block_page_sensors(Interface *interf, JsonObject *data);
 
 //void remote_action(RA action, ...);
 //void uploadProgress(size_t len, size_t total);

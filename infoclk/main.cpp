@@ -38,7 +38,7 @@ void setup() {
   informer.init(embui.param(FPSTR(V_MX_W)).toInt(), embui.param(FPSTR(V_MX_H)).toInt());
 
   // restore display and modules orientation from config
-  informer.mxPaneRotation(
+  informer.mxPaneSetup(
     embui.param(FPSTR(V_MX_OS)).toInt(), embui.param(FPSTR(V_MX_OV)).toInt(),
     embui.param(FPSTR(V_MX_VF)).toInt(), embui.param(FPSTR(V_MX_HF)).toInt(),
     embui.param(FPSTR(V_MX_MR)).toInt()

@@ -23,7 +23,8 @@ enum CD : uint8_t {
     WthNote,
     WthCID,
     WthSrtName,
-    Matrix
+    mtx,
+    snsrs
 };
 
 
@@ -35,6 +36,9 @@ static const char T_EN_Weather[] PROGMEM = "Weather";
 static const char T_RU_Weather[] PROGMEM = "Погода";
 static const char T_EN_Matrix[] PROGMEM = "Matrix";
 static const char T_RU_Matrix[] PROGMEM = "Матрица";
+static const char T_EN_Sensors[] PROGMEM = "Sensors";
+static const char T_RU_Sensors[] PROGMEM = "Сенсоры";
+
 
 static const char T_EN_Weather_note[] PROGMEM = "Obtain your API-key at http://api.openweathermap.org/";
 static const char T_RU_Weather_note[] PROGMEM = "Получите свой API-ключ на http://api.openweathermap.org/";
@@ -73,7 +77,8 @@ static const char *const C_DICT[][UI_DICT_SIZE] PROGMEM = {
     T_RU_Weather_note,
     T_RU_Weather_cid,
     T_RU_Weather_shname,
-    T_RU_Matrix
+    T_RU_Matrix,
+    T_RU_Sensors
   },
 // Index 1 - English lang
   { T_EN_Clock,
@@ -85,6 +90,7 @@ static const char *const C_DICT[][UI_DICT_SIZE] PROGMEM = {
     T_EN_Weather_note,
     T_EN_Weather_cid,
     T_EN_Weather_shname,
-    T_EN_Matrix
+    T_EN_Matrix,
+    T_EN_Sensors
   }
 };
