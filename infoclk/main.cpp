@@ -79,15 +79,6 @@ void onSTADisconnected() {
   informer.onNetIfDown();
 }
 
-
-
-// reboot esp task
-void espreboot() {
-  	Task *t = new Task(0, TASK_ONCE, [](){ESP.restart();}, &ts, false);
-    t->enableDelayed(UPD_RESTART_DELAY * TASK_SECOND);
-}
-
-
 // send HTTP responce, json with controller/fw versions and status info
 void wver(AsyncWebServerRequest *request) {
   char buff[HTTP_VER_BUFSIZE];
@@ -99,8 +90,11 @@ void wver(AsyncWebServerRequest *request) {
 		ESP.getFlashChipSize(),
 		ESP.getCoreVersion().c_str(),
 		system_get_sdk_version(),
-		FW_NAME,
-		TOSTRING(FW_VER),
+#ifdef GIT_REV
+    GIT_REV,
+#else
+    "-",
+#endif
 		ESP.getCpuFreqMHz(),
 		ESP.getFreeHeap(),
     (uint32_t)tp.tv_sec);

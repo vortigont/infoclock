@@ -34,7 +34,6 @@ static const char V_SN_HCOMP[]  = "sn_hcmp";	            // Humidity Sensor comp
 // UI blocks    - B_ prefix for 'web Block'
 static const char B_CLOCK[] PROGMEM = "b_clk";
 static const char B_WEATHER[] PROGMEM = "b_wthr";
-//static const char B_MORE[] PROGMEM = "b_more";
 static const char B_MATRIX[] PROGMEM = "b_mtx";
 static const char B_SENSORS[] PROGMEM = "b_sns";
 

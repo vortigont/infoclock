@@ -87,6 +87,12 @@ void section_main_frame(Interface *interf, JsonObject *data){
         block_page_clock(interf, data);               // Строим основной блок часов 
     }
 
+  interf->json_frame_flush();                         // Close interface section
+
+  // Publish firmware version (visible under menu section)
+  interf->json_frame_value();
+  interf->value(F("fwver"), F(INFOCLOCK_VERSION_STRING), true);
+  interf->json_frame_flush();
 }
 
 /**
@@ -166,7 +172,7 @@ void block_page_weather(Interface *interf, JsonObject *data){
  */
 void block_page_matrix(Interface *interf, JsonObject *data){
     if (!interf) return;
-    interf->json_frame_interface("");
+    interf->json_frame_interface();
 
     interf->json_section_main(FPSTR(B_MATRIX), FPSTR(C_DICT[lang][CD::mtx]));
 
@@ -221,10 +227,9 @@ void block_page_sensors(Interface *interf, JsonObject *data){
 
     interf->json_section_main(FPSTR(B_SENSORS), FPSTR(C_DICT[lang][CD::snsrs]));
 
-    interf->range(V_SN_UPD_RATE, 2, 0, 15, 1, F("Sensors update rate"), false);
+    interf->range(V_SN_UPD_RATE, 5, 5, 30, 5, F("Sensors update rate"), false);
     //interf->button_submit(F("mxreset"), FPSTR(C_DICT[lang][CD::MX_Reset]), FPSTR(T_GRAY));
 
-    interf->json_section_end(); // end of main
     interf->json_frame_flush();     // flush frame
 }
 

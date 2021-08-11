@@ -22,6 +22,18 @@
 #include "ts.h"         // task scheduler
 #include <ESPAsyncWebServer.h>
 
+#define FW_NAME "infoclock"
+
+#define INFOCLOCK_VERSION_MAJOR     1
+#define INFOCLOCK_VERSION_MINOR     2
+#define INFOCLOCK_VERSION_REVISION  0
+
+/* make version as integer*/
+#define INFOCLOCK_VERSION ((INFOCLOCK_VERSION_MAJOR) << 16 | (INFOCLOCK_VERSION_MINOR) << 8 | (INFOCLOCK_VERSION_REVISION))
+
+/* make version as string*/
+#define INFOCLOCK_VERSION_STRING   TOSTRING(INFOCLOCK_VERSION_MAJOR) "." TOSTRING(INFOCLOCK_VERSION_MINOR) "." TOSTRING(INFOCLOCK_VERSION_REVISION)
+
 #define UPD_RESTART_DELAY   5   // restart delay when updating firmware
 #define BAUD_RATE	115200	// serial debug port baud rate
 
@@ -29,7 +41,7 @@
 
 // PROGMEM strings
 // sprintf template for json version data
-static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"FlashSize\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"%s\",\"version\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%u,}";
+static const char PGverjson[] PROGMEM = "{\"ChipID\":\"%x\",\"Flash\":%u,\"Core\":\"%s\",\"SDK\":\"%s\",\"firmware\":\"" FW_NAME "\",\"version\":\"" INFOCLOCK_VERSION_STRING "\",\"git\":\"%s\",\"CPUMHz\":%u,\"Heap\":%u,\"Uptime\":%u}";
 
 // TaskScheduler
 //Let the runner object be a global, single instance shared between object files.
