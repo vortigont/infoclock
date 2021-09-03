@@ -249,11 +249,11 @@ void Infoclock::GetWeather(){
 	  if( httpCode == HTTP_CODE_OK ){
 		  String respdata = httpreq.getString();
 		  parseWeather(respdata);
-		  tWeatherUpd.setInterval(embui.param(FPSTR(V_W_UPD_TIME)).toInt() * TASK_HOUR);
+		  tWeatherUpd.setInterval(embui.paramVariant(FPSTR(V_W_UPD_TIME)).as<unsigned>() * TASK_HOUR);
   	} else {
 	  	LOG(print, F("Weather update code: "));
 		  LOG(print, httpCode);
-		  tWeatherUpd.setInterval(embui.param(FPSTR(V_W_UPD_RTR)).toInt() * TASK_MINUTE);
+		  tWeatherUpd.setInterval(embui.paramVariant(FPSTR(V_W_UPD_RTR)).as<unsigned>() * TASK_MINUTE);
 	  }
   }
 

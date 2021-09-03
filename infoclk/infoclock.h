@@ -60,6 +60,9 @@ public:
     // Set display brightness, returns resulting brightness
     void brightness(uint8_t b);
 
+    // reset matrix display
+    void mxreset(){ if (matrix) matrix.reset(); };
+
     const String& weatherdata(){return weather;};
 
     Sensors clksensor;    // sensors object

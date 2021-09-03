@@ -25,27 +25,21 @@ void create_parameters(){
     /**
      * регистрируем свои переменные
      */
-    embui.var_create(FPSTR(V_WAPI_KEY), "");                // API key for OpenWeather
-    embui.var_create(FPSTR(V_WAPI_CITY_ID), F("519690"));   // Новороссийск - 518255, Санкт-Петербург - "519690"
-    embui.var_create(FPSTR(V_WAPI_CITY_NAME), "");          // Короткое имя города для вывода
-    embui.var_create(FPSTR(V_W_UPD_TIME), TOSTRING(WEATHER_UPD_PERIOD));    // weather update, hours
-    embui.var_create(FPSTR(V_W_UPD_RTR),  TOSTRING(WEATHER_UPD_RETRY));	    // weather update, minutes
-    embui.var_create(FPSTR(V_MX_W),  TOSTRING(MX_DEFAULT_W));
-    embui.var_create(FPSTR(V_MX_H),  TOSTRING(MX_DEFAULT_H));
-    embui.var_create(FPSTR(V_MX_MR), TOSTRING(MX_DEFAULT_MR));
-    embui.var_create(FPSTR(V_MX_VF), TOSTRING(MX_DEFAULT_VF));
-    embui.var_create(FPSTR(V_MX_HF), TOSTRING(MX_DEFAULT_HF));
-    embui.var_create(FPSTR(V_MX_OS), TOSTRING(MX_DEFAULT_OV));
-    embui.var_create(FPSTR(V_MX_OV), TOSTRING(MX_DEFAULT_MR));
-
+    //embui.var_create(FPSTR(V_WAPI_KEY), "");                // API key for OpenWeather
+    //embui.var_create(FPSTR(V_WAPI_CITY_ID), F("519690"));   // Новороссийск - 518255, Санкт-Петербург - "519690"
+    //embui.var_create(FPSTR(V_WAPI_CITY_NAME), "");          // Короткое имя города для вывода
+    embui.var_create(FPSTR(V_W_UPD_TIME), WEATHER_UPD_PERIOD);    // weather update, hours
+    embui.var_create(FPSTR(V_W_UPD_RTR),  WEATHER_UPD_RETRY);	  // weather update retry, minutes
+    embui.var_create(FPSTR(V_MX_W),  MX_DEFAULT_W);
+    embui.var_create(FPSTR(V_MX_H),  MX_DEFAULT_H);
 
     /**
      * обработчики действий
      */ 
     // вывод WebUI секций
     embui.section_handle_add(FPSTR(B_CLOCK), block_page_clock);             // generate "clock" page
-    embui.section_handle_add(FPSTR(B_WEATHER), block_page_weather);         // generate "weather" page
-    embui.section_handle_add(FPSTR(B_MATRIX), block_page_matrix);           // generate "weather" page
+    embui.section_handle_add(FPSTR(B_WEATHER), block_page_weather);         // generate "weather setup" page
+    embui.section_handle_add(FPSTR(B_MATRIX), block_page_matrix);           // generate "matrix setup" page
     embui.section_handle_add(FPSTR(B_SENSORS), block_page_sensors);         // generate "sensors" page
 
 
@@ -124,14 +118,13 @@ void block_menu(Interface *interf, JsonObject *data){
  */
 void block_page_clock(Interface *interf, JsonObject *data){
     if (!interf) return;
-    interf->json_frame_interface("");       // саму секцию целиком не обрабатываем
+    interf->json_frame_interface();
 
     interf->json_section_main(FPSTR(B_CLOCK), FPSTR(C_DICT[lang][CD::Clock]));
 
     interf->range("brt", informer.brightness(), 0, 15, 1,"яркость", true);
-    interf->button_submit(F("mxreset"), FPSTR(C_DICT[lang][CD::MX_Reset]), FPSTR(T_GRAY));
+    interf->button(F("mxreset"), FPSTR(C_DICT[lang][CD::MX_Reset]), FPSTR(T_GRAY));
 
-    interf->json_section_end(); // end of main
     interf->json_frame_flush();     // flush frame
 }
 
@@ -149,7 +142,7 @@ void block_page_weather(Interface *interf, JsonObject *data){
     interf->comment(informer.weatherdata());       // Current Weather value
 
     // Force weather-update button
-    interf->button_submit(FPSTR(A_UPD_WEATHER), FPSTR(C_DICT[lang][CD::UPD_Weath]), FPSTR(T_GRAY));
+    interf->button(FPSTR(A_UPD_WEATHER), FPSTR(C_DICT[lang][CD::UPD_Weath]), FPSTR(T_GRAY));
 
     interf->spacer(FPSTR(C_DICT[lang][CD::WthNote]));       // Weather setup Note
 
@@ -157,12 +150,11 @@ void block_page_weather(Interface *interf, JsonObject *data){
     interf->text(FPSTR(V_WAPI_CITY_ID), FPSTR(C_DICT[lang][CD::WthCID]));           // city-id for weather API
     interf->text(FPSTR(V_WAPI_CITY_NAME), FPSTR(C_DICT[lang][CD::WthSrtName]));     // city short name
 
-    interf->text(FPSTR(V_W_UPD_TIME), F("интервал обновления, ч."));          // weather update, hours
-    interf->text(FPSTR(V_W_UPD_RTR), F("повтор при ошибке, мин."));            // weather update, minutes
+    interf->number(FPSTR(V_W_UPD_TIME), F("интервал обновления, ч."));          // weather update, hours
+    interf->number(FPSTR(V_W_UPD_RTR), F("повтор при ошибке, мин."));            // weather update, minutes
 
     interf->button_submit(FPSTR(A_SET_WEATHER), FPSTR(T_DICT[lang][TD::D_SAVE]), FPSTR(T_GRAY));
 
-    interf->json_section_end();     // end of main
     interf->json_frame_flush();     // flush frame
 }
 
@@ -180,8 +172,8 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 
     interf->json_section_line(FPSTR(A_SET_MATRIX));
 
-    interf->text(FPSTR(V_MX_W), FPSTR(F("Panel Width")));        // Num of modules W
-    interf->text(FPSTR(V_MX_H), FPSTR(F("Panel Height")));       // Num of modules H
+    interf->number(FPSTR(V_MX_W), FPSTR(F("Panel Width")));        // Num of modules W
+    interf->number(FPSTR(V_MX_H), FPSTR(F("Panel Height")));       // Num of modules H
 
 
     /*
@@ -192,27 +184,26 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 	 *   2: 180 degrees
 	 *   3: 90 degrees counter clockwise
 	 */
-    interf->select(FPSTR(V_MX_MR), embui.param(FPSTR(V_MX_MR)), F("MAX Module rotation"), false, false);
-    interf->option("1", F("No rotation"));
-    interf->option("2", F("90 CW"));
-    interf->option("3", F("180 CW"));
-    interf->option("4", F("90 CCW"));
-    interf->json_section_end();
+    interf->select(FPSTR(V_MX_MR), embui.paramVariant(FPSTR(V_MX_MR)), F("MAX Module rotation"), false, false);
+    interf->option(1, F("No rotation"));
+    interf->option(2, F("90 CW"));
+    interf->option(3, F("180 CW"));
+    interf->option(4, F("90 CCW"));
+    interf->json_section_end();     // end of select
 
     interf->json_section_end();     // end of line
 
     interf->json_section_line(FPSTR(A_SET_MATRIX));
-
-    interf->checkbox(FPSTR(V_MX_OS), embui.param(FPSTR(V_MX_OS)), F("Serpentine"), false);	// Serpentine/Zig-zag sequence
-    interf->checkbox(FPSTR(V_MX_OV), embui.param(FPSTR(V_MX_OV)), F("Vertical"), false);	// Vertical sequence
-    interf->checkbox(FPSTR(V_MX_VF), embui.param(FPSTR(V_MX_VF)), F("V-Flip"), false);	// Flip verticaly
-    interf->checkbox(FPSTR(V_MX_HF), embui.param(FPSTR(V_MX_HF)), F("H-Flip"), false);	// Flip horizontaly
+    interf->checkbox(FPSTR(V_MX_OS), F("Serpentine"), false);	// Serpentine/Zig-zag sequence
+    interf->checkbox(FPSTR(V_MX_OV), F("Vertical"), false);	// Vertical sequence
+    interf->checkbox(FPSTR(V_MX_VF), F("V-Flip"), false);	// Flip verticaly
+    interf->checkbox(FPSTR(V_MX_HF), F("H-Flip"), false);	// Flip horizontaly
     interf->json_section_end();     // end of line
-
 
     interf->button_submit(FPSTR(A_SET_MATRIX), FPSTR(T_DICT[lang][TD::D_SAVE]), "blue");
 
-    interf->json_section_end();     // end of main
+    interf->button(F("mxreset"), FPSTR(C_DICT[lang][CD::MX_Reset]), FPSTR(T_GRAY));
+
     interf->json_frame_flush();     // flush frame
 }
 
@@ -228,7 +219,6 @@ void block_page_sensors(Interface *interf, JsonObject *data){
     interf->json_section_main(FPSTR(B_SENSORS), FPSTR(C_DICT[lang][CD::snsrs]));
 
     interf->range(V_SN_UPD_RATE, 5, 5, 30, 5, F("Sensors update rate"), false);
-    //interf->button_submit(F("mxreset"), FPSTR(C_DICT[lang][CD::MX_Reset]), FPSTR(T_GRAY));
 
     interf->json_frame_flush();     // flush frame
 }
@@ -259,15 +249,16 @@ void set_weather(Interface *interf, JsonObject *data){
     if (!data) return;
 
     // сохраняем параметры настроек погоды
-    SETPARAM(FPSTR(V_WAPI_KEY));
-    SETPARAM(FPSTR(V_WAPI_CITY_ID));
-    SETPARAM(FPSTR(V_WAPI_CITY_NAME));
+    SETPARAM_NONULL(FPSTR(V_WAPI_KEY));
+    SETPARAM_NONULL(FPSTR(V_WAPI_CITY_ID));
+    SETPARAM_NONULL(FPSTR(V_WAPI_CITY_NAME));
     SETPARAM(FPSTR(V_W_UPD_TIME));
     SETPARAM(FPSTR(V_W_UPD_RTR));
  
     informer.refreshWeather();
 
-    section_main_frame(interf, data);
+    if(interf)
+        section_main_frame(interf, nullptr);
 }
 
 /**
@@ -278,11 +269,11 @@ void set_matrix(Interface *interf, JsonObject *data){
 
     SETPARAM(FPSTR(V_MX_W));
     SETPARAM(FPSTR(V_MX_H));
-    SETPARAM(FPSTR(V_MX_VF));
-    SETPARAM(FPSTR(V_MX_HF));
-    SETPARAM(FPSTR(V_MX_OS));
-    SETPARAM(FPSTR(V_MX_OV));
-    SETPARAM(FPSTR(V_MX_MR));
+    SETPARAM_NONULL(FPSTR(V_MX_VF));
+    SETPARAM_NONULL(FPSTR(V_MX_HF));
+    SETPARAM_NONULL(FPSTR(V_MX_OS));
+    SETPARAM_NONULL(FPSTR(V_MX_OV));
+    SETPARAM_NONULL(FPSTR(V_MX_MR));
 
     informer.mxPaneSetup(
         (*data)[FPSTR(V_MX_OS)].as<unsigned short>(), (*data)[FPSTR(V_MX_OV)].as<unsigned short>(),
@@ -290,7 +281,7 @@ void set_matrix(Interface *interf, JsonObject *data){
         (*data)[FPSTR(V_MX_MR)].as<unsigned short>()
     );
 
-    block_page_matrix(interf, data);
+    if(interf) block_page_matrix(interf, nullptr);
 }
 
 
@@ -299,7 +290,7 @@ void set_matrix(Interface *interf, JsonObject *data){
  */
 void ui_set_brightness(Interface *interf, JsonObject *data){
     if (!data) return;
-    informer.brightness((*data)["brt"].as<unsigned short>());
+    informer.brightness((*data)["brt"]);
 }
 
 /**
@@ -307,5 +298,5 @@ void ui_set_brightness(Interface *interf, JsonObject *data){
  * сбрасывает состояние всех регистров, помогает устранить артефакты на модулях
  */
 void ui_mx_reset(Interface *interf, JsonObject *data){
-    //matrix->reset();
+    informer.mxreset();
 }

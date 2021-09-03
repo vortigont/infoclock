@@ -35,13 +35,13 @@ void setup() {
   embui.begin();
 
   // read matrix w,h from config and initialize object
-  informer.init(embui.param(FPSTR(V_MX_W)).toInt(), embui.param(FPSTR(V_MX_H)).toInt());
+  informer.init(embui.paramVariant(FPSTR(V_MX_W)), embui.paramVariant(FPSTR(V_MX_H)));
 
   // restore display and modules orientation from config
   informer.mxPaneSetup(
-    embui.param(FPSTR(V_MX_OS)).toInt(), embui.param(FPSTR(V_MX_OV)).toInt(),
-    embui.param(FPSTR(V_MX_VF)).toInt(), embui.param(FPSTR(V_MX_HF)).toInt(),
-    embui.param(FPSTR(V_MX_MR)).toInt()
+    embui.paramVariant(FPSTR(V_MX_OS)), embui.paramVariant(FPSTR(V_MX_OV)),
+    embui.paramVariant(FPSTR(V_MX_VF)), embui.paramVariant(FPSTR(V_MX_HF)),
+    embui.paramVariant(FPSTR(V_MX_MR))
   );
 
   embui.server.on(PSTR("/fw"), HTTP_GET, [](AsyncWebServerRequest *request){
