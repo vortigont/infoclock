@@ -4,7 +4,7 @@ USAGE="Usage: `basename $0` [-h] [-t embuitag] [-f]"
 
 # embui branch/tag name to fetch
 embuirepo='https://github.com/vortigont/EmbUI'
-embuitag="v2.4.x"
+embuitag="v2.5"
 
 #####
 # no changes below this point!
@@ -42,26 +42,6 @@ while getopts hft: OPT; do
     esac
 done
 
-# parse cmd options
-while getopts ht: OPT; do
-    case "$OPT" in
-        h)
-            echo $USAGE
-            exit 0
-            ;;
-        t)
-            echo "EmbUI tag is set to: $OPTARG"
-            embuitag=$OPTARG
-            ;;
-        \?)
-            # getopts issues an error message
-            echo $USAGE >&2
-            exit 1
-            ;;
-    esac
-done
-
-
 [ -f $tags ] || touch $tags
 
 # check github file for a new hash
@@ -84,6 +64,12 @@ getResgz(){
     if freshtag ${url} ; then
         curl -sL $url | gzip -9 > ../data/${res}.gz
     fi
+}
+
+# update local file
+updlocalgz(){
+    local res=$1
+    [ ! -f ../data/${res} ] || [ html/${res} -nt ../data/${res}.gz ] &&  gzip -9kf html/${res} && mv -f html/${res}.gz ../data/${res}.gz
 }
 
 echo "Preparing resources for FS image into ../data/ dir" 
@@ -154,13 +140,13 @@ fi
 if [ ! -f html/index.html ] ; then
     getResgz index.html
 else
-    [ ! -f ../data/index.html.gz ]  || [ html/index.html -nt ../data/index.html.gz ] && gzip -9kf html/index.html && mv -f html/index.html.gz ../data/
+    updlocalgz 'index.html'
 fi
 
 if [ ! -f html/favicon.ico ] ; then
     getResgz favicon.ico
 else
-    [ ! -f ../data/favicon.ico.gz ] || [ html/favicon.ico -nt ../data/favicon.ico.gz ] &&  gzip -9kf html/favicon.ico && mv -f html/favicon.ico.gz ../data/
+    updlocalgz 'favicon.ico'
 fi
 
 # save fresh tags

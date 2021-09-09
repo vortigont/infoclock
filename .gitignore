@@ -8,3 +8,4 @@ lib/
 .gcc-flags.json
 .travis.yml
 config.h
+etags.txt
