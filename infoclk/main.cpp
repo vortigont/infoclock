@@ -44,6 +44,15 @@ void setup() {
     embui.paramVariant(FPSTR(V_MX_MR))
   );
 
+  // restore sensor update rate, if defined
+  if (embui.paramVariant(FPSTR(V_SN_UPD_RATE)))
+    informer.snsupdrate(embui.paramVariant(FPSTR(V_SN_UPD_RATE)));
+
+  // restore sensor temp compensation, if defined
+  if (embui.paramVariant(FPSTR(V_SN_TCOMP)))
+    informer.clksensor.tempoffset(embui.paramVariant(FPSTR(V_SN_UPD_RATE)));
+
+  // firmware info
   embui.server.on(PSTR("/fw"), HTTP_GET, [](AsyncWebServerRequest *request){
     wver(request);
   });

@@ -405,3 +405,21 @@ void Infoclock::onNetIfDown(){
 void Infoclock::brightness(const uint8_t b){
   return matrix->setIntensity(b > MAX_BRIGHTNESS ? MAX_BRIGHTNESS : b);
 }
+
+uint8_t Infoclock::snsupdrate(){
+  if (tSensorUpd.isEnabled()){
+    return (tSensorUpd.getInterval() / TASK_SECOND);
+  }
+  return 0;
+};
+
+uint8_t Infoclock::snsupdrate(uint8_t rate){
+  if (rate){
+    tSensorUpd.setInterval(rate * TASK_SECOND);
+    tSensorUpd.restart();
+  } else {
+    tSensorUpd.disable();
+  }
+  return snsupdrate();
+};
+

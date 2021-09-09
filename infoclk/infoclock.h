@@ -24,6 +24,12 @@
 #define MX_DEFAULT_OS   0   // Modules order - Serpentine/Zig-Zag
 #define MX_DEFAULT_MR   0   // Modules rotation (90 degree turns)
 
+// sensors
+#ifndef DEFAULT_SNSR_UPD_RATE
+#define DEFAULT_SNSR_UPD_RATE 5     // Update rate in seconds
+#endif
+
+
 class Infoclock {
 
 public:
@@ -66,6 +72,22 @@ public:
     const String& weatherdata(){return weather;};
 
     Sensors clksensor;    // sensors object
+
+    /**
+     * @brief get sensors ipdate rate 
+     * 
+     * @return uint8_t current rate in seconds
+     */
+    uint8_t snsupdrate();
+
+    /**
+     * @brief set sensors update rate
+     * rate 0 disables update
+     * 
+     * @param rate in seconds
+     * @return uint8_t rate in seconds
+     */
+    uint8_t snsupdrate(uint8_t rate);
 
 
 private:

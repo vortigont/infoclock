@@ -16,7 +16,6 @@
 // BME Sensor setup
 #define PRESSURE_UNITS 5        // unit: B001 = hPa, B010 = inHg, 5 = mmHg
 #define METRIC_UNITS true       // measurement units
-#define SENSOR_UPD_PERIOD 5     // Update rate in seconds
 
 // Weather API
 #define WAPI_URL "http://api.openweathermap.org/data/2.5/weather"

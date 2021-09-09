@@ -36,7 +36,7 @@ enum class sensor_t{NA, bme280, bmp280, si7021, sgp30};
 class Sensors {
 private:
 
- 	float temp, pressure, humidity, dew = NAN;
+ 	float temp, pressure, humidity, toffset = 0.0, dew = NAN;
   uint16_t co2, tvoc;
   sensor_t _sensor_model = sensor_t::NA;
   bool issgp = false;
@@ -59,4 +59,9 @@ public:
   void readsgp30(uint16_t &co2, uint16_t &tvoc, const float rh, const float t);
 
   static double RHtoAbsolute (float relHumidity, float tempC);
+
+  // temp sensor offset get/set
+  float tempoffset();
+  float tempoffset(float t);
+
 };

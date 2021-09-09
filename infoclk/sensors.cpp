@@ -114,16 +114,16 @@ bool Sensors::getFormattedValues(char* str) {
 
             switch (s_bme.chipModel()){
               case BME280::ChipModel_BME280:
-                snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f Rh:%.f%% P:%.fmmHg"), temp, humidity, pressure);
+                snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f Rh:%.f%% P:%.fmmHg"), temp + toffset, humidity, pressure);
                 return true;
               default:
               //case BME280::ChipModel_BMP280:
-                snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f P:%.fmmHg"), temp, pressure);
+                snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f P:%.fmmHg"), temp + toffset, pressure);
                 return true;
             }
       case sensor_t::si7021 :
             readsi7021(temp, humidity);
-            snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f Rh:%.f%%"), temp, humidity);
+            snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("T:%.1f Rh:%.f%%"), temp + toffset, humidity);
             return true;
       default:
             snprintf_P(str, SENSOR_DATA_BUFSIZE, PSTR("Temp sensor err!"));
@@ -174,3 +174,11 @@ uint16_t Sensors::doubleToFixedPoint( double number) {
   uint16_t value = floor(number2 + 0.5);
   return value;
 }
+
+
+float Sensors::tempoffset(float t){
+  if (t != NAN)
+    toffset = t;
+  
+  return toffset;
+};

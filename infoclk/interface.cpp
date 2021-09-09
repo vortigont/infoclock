@@ -54,7 +54,6 @@ void create_parameters(){
     embui.section_handle_add(FPSTR(A_UPD_WEATHER), upd_weather);            // обновить погоду
     embui.section_handle_add(FPSTR(A_SET_WEATHER), set_weather);            // save weather settings
     embui.section_handle_add(FPSTR(A_SET_MATRIX),  set_matrix);             // save matrix settings
-
     embui.section_handle_add("mxreset", ui_mx_reset);                       // сброс матрицы
 }
 
@@ -213,12 +212,23 @@ void block_page_matrix(Interface *interf, JsonObject *data){
  * 
  */
 void block_page_sensors(Interface *interf, JsonObject *data){
+
+    // if it was a form post, than update settings
+    if (data){
+        SETPARAM_NONULL(FPSTR(V_SN_TCOMP), informer.clksensor.tempoffset(embui.paramVariant(FPSTR(V_SN_TCOMP))));
+        SETPARAM(FPSTR(V_SN_UPD_RATE), informer.snsupdrate(embui.paramVariant(FPSTR(V_W_UPD_TIME))));
+    }
+
     if (!interf) return;
     interf->json_frame_interface();
 
     interf->json_section_main(FPSTR(B_SENSORS), FPSTR(C_DICT[lang][CD::snsrs]));
 
-    interf->range(V_SN_UPD_RATE, 5, 5, 30, 5, F("Sensors update rate"), false);
+    interf->range(FPSTR(V_SN_UPD_RATE), 5, 5, 30, 5, F("Sensors update rate"), false);
+
+    interf->number(V_SN_TCOMP, F("Temp sensor compensation"), 0.1, -5.0, 5.0);
+
+    interf->button_submit(FPSTR(B_SENSORS), FPSTR(T_DICT[lang][TD::D_SAVE]));
 
     interf->json_frame_flush();     // flush frame
 }
