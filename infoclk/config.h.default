@@ -5,22 +5,12 @@
 // #define _FWDEBUG_
 
 
-// Matrix setup
-#define PIN_CS D0          // SPI CS pin
-#define MATRIX_W 4         // Num of matrixes (horizontal)
-#define MATRIX_H 4         // Num of matrixes (vertical)
-
 // NTP Options
 #define COUNTRY "ru"           // Country double-letter code
 
 // BME Sensor setup
 #define PRESSURE_UNITS 5        // unit: B001 = hPa, B010 = inHg, 5 = mmHg
 #define METRIC_UNITS true       // measurement units
-
-// Weather API
-#define WAPI_URL "http://api.openweathermap.org/data/2.5/weather"
-#define WEATHER_UPD_PERIOD 2	// weather update (hours)
-#define WEATHER_UPD_RETRY 10	// weather update retry if http error (minutes)
 
 // some constants
 #define MIN_BRIGHTNESS 0

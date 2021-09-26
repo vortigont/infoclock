@@ -35,6 +35,7 @@
 
 
 // weather API URL
+// http://api.openweathermap.org/data/2.5/weather?id=519690&units=metric&lang=ru&APPID=<id>
 static const char PGwapireq1[] PROGMEM = WAPI_URL "?id=";
 static const char PGwapireq2[] PROGMEM = "&units=metric&lang=" COUNTRY "&APPID=";   // WAPI_KEY;
 
@@ -44,17 +45,21 @@ Infoclock::Infoclock() : w(DEFAULT_DIM_X), h(DEFAULT_DIM_Y) {
 
 }
 
+
 /** @brief init - initialize Informer object, create dynamic valuies and objects
  * 
  *  @param _x - display panel dimensions, absolute width
  *  @param _y - display panel dimensions, absolute height
  */
-void Infoclock::init(const int16_t _x, const int16_t _y){
+void Infoclock::init(const int16_t _x, const int16_t _y, const uint8_t cs_pin){
   setDimensions(_x, _y);
 
   tape=String(F("Connecting to WiFi..."));
   // create display object
-  matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(PIN_CS, w, h));
+  matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(cs_pin, w, h));
+
+  if (!matrix)
+    return;
 
   //matrix->setFont(&TomThumb);
   //matrix->setFont(&FreeMono9pt7b);
@@ -286,7 +291,10 @@ void Infoclock::parseWeather(String& result){
    weather += root[F("weather")][0][F("description")].as<String>();
    weather += ", ";
 // Температура
-   weather += root["main"]["temp"].as<String>();
+   int t = int(root["main"]["temp"].as<float>() + 0.5);
+   if (t > 0)
+     weather += "+";
+   weather += t;
 
 // Влажность
    weather += ", H:";
@@ -294,13 +302,13 @@ void Infoclock::parseWeather(String& result){
 // Ветер
    weather += "% Ветер ";
    double deg = root["wind"]["deg"];
-   if( deg >22.5 && deg <=67.5 ) weather += "сев-вост ";
-   else if( deg >67.5 && deg <=112.5 ) weather += "вост. ";
-   else if( deg >112.5 && deg <=157.5 ) weather += "юг-вост ";
-   else if( deg >157.5 && deg <=202.5 ) weather += "юж. ";
-   else if( deg >202.5 && deg <=247.5 ) weather += "юг-зап ";
-   else if( deg >247.5 && deg <=292.5 ) weather += "зап. ";
-   else if( deg >292.5 && deg <=337.5 ) weather += "сев-зап ";
+   if( deg >22 && deg <=68 ) weather += "сев-вост ";
+   else if( deg >68 && deg <=112 ) weather += "вост. ";
+   else if( deg >112 && deg <=158 ) weather += "юг-вост ";
+   else if( deg >158 && deg <=202 ) weather += "юж. ";
+   else if( deg >202 && deg <=248 ) weather += "юг-зап ";
+   else if( deg >248 && deg <=292 ) weather += "зап. ";
+   else if( deg >292 && deg <=338 ) weather += "сев-зап ";
    else weather += "сев,";
    weather += root["wind"]["speed"].as<String>();
    weather += " м/с";

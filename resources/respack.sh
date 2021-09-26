@@ -112,7 +112,7 @@ if [ $refresh_data -eq 1 ] ; then
 
     # append our local styles to the embui
     if [ -f html/css/style_*.css ] ; then
-        for f in "css/style_*.css"
+        for f in "html/css/style_*.css"
         do
             gzip -d ../data/css/$( basename $f).gz
             cat $f >> ../data/css/$( basename $f)
@@ -148,6 +148,8 @@ if [ ! -f html/favicon.ico ] ; then
 else
     updlocalgz 'favicon.ico'
 fi
+
+updlocalgz 'css/disp.css'
 
 # save fresh tags
 mv -f newetags.txt $tags

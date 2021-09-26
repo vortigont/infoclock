@@ -18,7 +18,6 @@
 #include "globals.h"    // EmbUI macro's for LOG
 #include "config.h"
 #include "uistrings.h"  // non-localized text-strings
-#include "ui_i18n.h"    // localized GUI text-strings
 #include "ts.h"         // task scheduler
 #include <ESPAsyncWebServer.h>
 
@@ -26,7 +25,7 @@
 
 #define INFOCLOCK_VERSION_MAJOR     1
 #define INFOCLOCK_VERSION_MINOR     2
-#define INFOCLOCK_VERSION_REVISION  0
+#define INFOCLOCK_VERSION_REVISION  1
 
 /* make version as integer*/
 #define INFOCLOCK_VERSION ((INFOCLOCK_VERSION_MAJOR) << 16 | (INFOCLOCK_VERSION_MINOR) << 8 | (INFOCLOCK_VERSION_REVISION))

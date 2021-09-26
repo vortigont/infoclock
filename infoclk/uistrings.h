@@ -23,7 +23,7 @@ static const char V_MX_HF[] = "mx_hf";	                // Canvas H-flip
 static const char V_MX_OS[] = "mx_os";	                // Modules order - Serpentine/Zig-Zag
 static const char V_MX_OV[] = "mx_ov";	                // Modules order - Vertical/Horizontal
 static const char V_MX_MR[] = "mx_mr";	                // Module rotation (90 degree turns)
-//static const char V_MX_RST[] = "mx_rst";	            //
+static const char V_CSPIN[] = "mx_csp";                 // CS pin
 
 // Sensors
 static const char V_SN_UPD_RATE[]  = "sn_updr";	            // Sensors update rate, sec

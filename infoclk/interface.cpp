@@ -3,9 +3,13 @@
 #include <EmbUI.h>
 #include "interface.h"
 #include "infoclock.h"
+#include "ui_i18n.h"    // localized GUI text-strings
 
 // статический класс с готовыми формами для базовых системных натсроек
 #include "basicui.h"
+
+#define CS_MIN 0
+#define CS_MAX 16
 
 //uint8_t lang = LANG::RU;   // default language for text resources
 
@@ -25,13 +29,11 @@ void create_parameters(){
     /**
      * регистрируем свои переменные
      */
-    //embui.var_create(FPSTR(V_WAPI_KEY), "");                // API key for OpenWeather
-    //embui.var_create(FPSTR(V_WAPI_CITY_ID), F("519690"));   // Новороссийск - 518255, Санкт-Петербург - "519690"
-    //embui.var_create(FPSTR(V_WAPI_CITY_NAME), "");          // Короткое имя города для вывода
     embui.var_create(FPSTR(V_W_UPD_TIME), WEATHER_UPD_PERIOD);    // weather update, hours
     embui.var_create(FPSTR(V_W_UPD_RTR),  WEATHER_UPD_RETRY);	  // weather update retry, minutes
     embui.var_create(FPSTR(V_MX_W),  MX_DEFAULT_W);
     embui.var_create(FPSTR(V_MX_H),  MX_DEFAULT_H);
+    embui.var_create(FPSTR(V_CSPIN), DEFAULT_CS_PIN);             // SPI CS pin
 
     /**
      * обработчики действий
@@ -124,6 +126,11 @@ void block_page_clock(Interface *interf, JsonObject *data){
     interf->range("brt", informer.brightness(), 0, 15, 1,"яркость", true);
     interf->button(F("mxreset"), FPSTR(C_DICT[lang][CD::MX_Reset]), FPSTR(T_GRAY));
 
+    // Simple Clock display
+    String clk; embui.timeProcessor.getDateTimeString(clk);
+    interf->display(F("clk"), clk);    // Clock display
+
+
     interf->json_frame_flush();     // flush frame
 }
 
@@ -169,6 +176,10 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 
     interf->range(F("brt"), informer.brightness(), 0, 15, 1, F("яркость"), true);
 
+    interf->number(FPSTR(V_CSPIN), F("SPI CS pin"), 1, CS_MIN, CS_MAX);
+    interf->comment(F("Changing CS pin requires MCU reboot"));
+    interf->spacer();
+
     interf->json_section_line(FPSTR(A_SET_MATRIX));
 
     interf->number(FPSTR(V_MX_W), FPSTR(F("Panel Width")));        // Num of modules W
@@ -183,7 +194,7 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 	 *   2: 180 degrees
 	 *   3: 90 degrees counter clockwise
 	 */
-    interf->select(FPSTR(V_MX_MR), embui.paramVariant(FPSTR(V_MX_MR)), F("MAX Module rotation"), false, false);
+    interf->select(FPSTR(V_MX_MR), F("MAX Module rotation"));
     interf->option(1, F("No rotation"));
     interf->option(2, F("90 CW"));
     interf->option(3, F("180 CW"));
@@ -226,7 +237,7 @@ void block_page_sensors(Interface *interf, JsonObject *data){
 
     interf->range(FPSTR(V_SN_UPD_RATE), 5, 5, 30, 5, F("Sensors update rate"), false);
 
-    interf->number(V_SN_TCOMP, F("Temp sensor compensation"), 0.1, -5.0, 5.0);
+    interf->number(FPSTR(V_SN_TCOMP), F("Temp sensor compensation"), 0.1, -5.0, 5.0);
 
     interf->button_submit(FPSTR(B_SENSORS), FPSTR(T_DICT[lang][TD::D_SAVE]));
 
@@ -276,6 +287,12 @@ void set_weather(Interface *interf, JsonObject *data){
  */
 void set_matrix(Interface *interf, JsonObject *data){
     if (!data) return;
+
+    // save cs pin to cfg
+    uint8_t cs = (*data)[FPSTR(V_CSPIN)].as<unsigned short>();
+    if (cs >= CS_MIN && cs <= CS_MAX && cs < 6 && cs >11){
+        SETPARAM(FPSTR(V_CSPIN));
+    }
 
     SETPARAM(FPSTR(V_MX_W));
     SETPARAM(FPSTR(V_MX_H));

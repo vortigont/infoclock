@@ -34,8 +34,8 @@ void setup() {
   // start framework - this loads config data and initializes WiFi
   embui.begin();
 
-  // read matrix w,h from config and initialize object
-  informer.init(embui.paramVariant(FPSTR(V_MX_W)), embui.paramVariant(FPSTR(V_MX_H)));
+  // read matrix w,h,cs from config and initialize object
+  informer.init(embui.paramVariant(FPSTR(V_MX_W)), embui.paramVariant(FPSTR(V_MX_H)), embui.paramVariant(FPSTR(V_CSPIN)));
 
   // restore display and modules orientation from config
   informer.mxPaneSetup(

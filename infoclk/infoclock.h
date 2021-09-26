@@ -13,6 +13,12 @@
 #include <ESP8266HTTPClient.h>
 #include "sensors.h"
 
+
+// Matrix setup
+#ifndef DEFAULT_CS_PIN
+#define DEFAULT_CS_PIN  16      // SPI CS pin D0 on WeMos D1 Mini board
+#endif
+
 #define DEFAULT_DIM_X   8       // default panel dimensions, pixels x
 #define DEFAULT_DIM_Y   8       // default panel dimensions, pixels y
 
@@ -29,6 +35,10 @@
 #define DEFAULT_SNSR_UPD_RATE 5     // Update rate in seconds
 #endif
 
+// Weather API
+#define WAPI_URL "http://api.openweathermap.org/data/2.5/weather"
+#define WEATHER_UPD_PERIOD 2	// weather update (hours)
+#define WEATHER_UPD_RETRY 10	// weather update retry if http error (minutes)
 
 class Infoclock {
 
@@ -38,12 +48,24 @@ public:
      */
     Infoclock();
 
+    /**
+     * @brief Destroy the Infoclock object
+     * 
+     */
+    ~Infoclock(){
+        ts.deleteTask(tWeatherUpd);
+        ts.deleteTask(tScroller);
+        ts.deleteTask(tSecondsPulse);
+        ts.deleteTask(tDrawTicks);
+        ts.deleteTask(tSensorUpd);
+    };
+
     /** @brief init - initialize Informer object, create dynamic valuies and objects
      * 
      *  @param _x - display panel dimensions, absolute width
      *  @param _y - display panel dimensions, absolute height
      */
-    void init(const int16_t _x, const int16_t _y);
+    void init(const int16_t _x, const int16_t _y, const uint8_t cs_pin = DEFAULT_CS_PIN);
 
     /** @brief onNetIfUp - коллбек для внешнего события "сеть доступна"
      * 
@@ -91,9 +113,9 @@ public:
 
 
 private:
+
     std::unique_ptr<Max72xxPanel> matrix = nullptr;   // указатель для объкета матрицы, будет инициализирован позже
 
-    //static time_t now;
     uint8_t lastmin = 0;
     bool wscroll = 1;	 // do weather scroll
     uint16_t w, h;       // matrix width, height
