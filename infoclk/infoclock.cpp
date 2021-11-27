@@ -203,9 +203,9 @@ void Infoclock::bigClk () {
     matrix->fillRect(0, 0, matrix->width(), CLK_FONT_HEIGHT, 0);
 
     char buf[3];
-    sprintf(buf, "%2d", embui.timeProcessor.getHours());
+    sprintf(buf, "%2d", TimeProcessor::getInstance().getHours());
     mtxprint(buf, 0, CLK_FONT_OFFSET_Y);
-    sprintf(buf, "%02d", embui.timeProcessor.getMinutes());
+    sprintf(buf, "%02d", TimeProcessor::getInstance().getMinutes());
     mtxprint(buf, CLK_MINUTE_OFFSET_X, CLK_FONT_OFFSET_Y);
 }
 
@@ -288,8 +288,14 @@ void Infoclock::parseWeather(String& result){
 
 // Погода
    weather = embui.param(FPSTR(V_WAPI_CITY_NAME));
+   if (weather.isEmpty()){
+    weather = root["name"].as<String>();
+    weather += ": ";
+   }
+
    weather += root[F("weather")][0][F("description")].as<String>();
    weather += ", ";
+
 // Температура
    int t = int(root["main"]["temp"].as<float>() + 0.5);
    if (t > 0)
@@ -297,10 +303,10 @@ void Infoclock::parseWeather(String& result){
    weather += t;
 
 // Влажность
-   weather += ", H:";
+   weather += ", влажность: ";
    weather += root["main"]["humidity"].as<String>();
 // Ветер
-   weather += "% Ветер ";
+   weather += "%, ветер ";
    double deg = root["wind"]["deg"];
    if( deg >22 && deg <=68 ) weather += "сев-вост ";
    else if( deg >68 && deg <=112 ) weather += "вост. ";
@@ -310,8 +316,24 @@ void Infoclock::parseWeather(String& result){
    else if( deg >248 && deg <=292 ) weather += "зап. ";
    else if( deg >292 && deg <=338 ) weather += "сев-зап ";
    else weather += "сев,";
-   weather += root["wind"]["speed"].as<String>();
+   int wind = int(root["wind"]["speed"].as<float>() + 0.5);
+   weather += wind;
    weather += " м/с";
+
+  // sunrise/sunset
+   weather += ", восх. ";
+   long suntime = root["sys"]["sunrise"];
+   time_t sun = suntime;
+   weather += localtime(&sun)->tm_hour;
+   weather += ":";
+   weather += localtime(&sun)->tm_min;
+
+   weather += ", закат ";
+   suntime = root["sys"]["sunset"];
+   sun = suntime;
+   weather += localtime(&sun)->tm_hour;
+   weather += ":";
+   weather += localtime(&sun)->tm_min;
 
    LOG(print, F("Weather: "));
    LOG(println, weather);

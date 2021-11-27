@@ -42,8 +42,8 @@ static const char T_RU_Sensors[] PROGMEM = "Сенсоры";
 
 static const char T_EN_Weather_note[] PROGMEM = "Obtain your API-key at http://api.openweathermap.org/";
 static const char T_RU_Weather_note[] PROGMEM = "Получите свой API-ключ на http://api.openweathermap.org/";
-static const char T_EN_Weather_cid[] PROGMEM = "City-ID. Pls, find City-ID at https://openweathermap.org/city/";
-static const char T_RU_Weather_cid[] PROGMEM = "Код города. Найдите код города на https://openweathermap.org/city/";
+static const char T_EN_Weather_cid[] PROGMEM = "City-ID. Pls, find City-ID at https://openweathermap.org/current";
+static const char T_RU_Weather_cid[] PROGMEM = "Код города. Найдите код города на https://openweathermap.org/current";
 static const char T_EN_Weather_shname[] PROGMEM = "short name for city in output string (optional)";
 static const char T_RU_Weather_shname[] PROGMEM = "короткое имя города в строке вывода (опционально)";
 

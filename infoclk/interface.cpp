@@ -48,7 +48,7 @@ void create_parameters(){
    /**
     * регистрируем статические секции для web-интерфейса с системными настройками,
     */
-    BasicUI::add_sections();
+    basicui::add_sections();
 
 
     // активности
@@ -77,7 +77,7 @@ void section_main_frame(Interface *interf, JsonObject *data){
 
     if(!embui.sysData.wifi_sta){                      // если контроллер не подключен к внешней AP, сразу открываем вкладку с настройками WiFi
         LOG(println, F("UI: Opening network setup section"));
-        BasicUI::block_settings_netw(interf, data);
+        basicui::block_settings_netw(interf, data);
     } else {
         block_page_clock(interf, data);               // Строим основной блок часов 
     }
@@ -108,7 +108,7 @@ void block_menu(Interface *interf, JsonObject *data){
     /**
      * добавляем в меню пункт - настройки,
      */
-    BasicUI::opt_setup(interf, data);       // пункт меню "настройки"
+    basicui::opt_setup(interf, data);       // пункт меню "настройки"
 
     interf->json_section_end();
 }
@@ -250,7 +250,7 @@ void block_page_sensors(Interface *interf, JsonObject *data){
  * обработчик статуса (периодического опроса контроллера веб-приложением)
  */
 void pubCallback(Interface *interf){
-    BasicUI::embuistatus(interf);
+    basicui::embuistatus(interf);
 }
 
 
