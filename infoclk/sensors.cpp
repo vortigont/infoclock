@@ -96,9 +96,9 @@ bool Sensors::getFormattedValues(String &str){
 
   // add air quality
   readsgp30(co2, tvoc, temp, humidity);
-  str += " CO2: ";
+  str += " CO2:";
   str += co2;
-  str += " ppm, tvoc: ";
+  str += " ppm, tvoc:";
   str += tvoc;
   str += " ppb";
 

@@ -1,6 +1,7 @@
 lib/
 *.bin
 *.orig
+user_*.ini
 .pio
 .pioenvs
 .piolibdeps

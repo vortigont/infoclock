@@ -16,6 +16,7 @@ refresh_data=0
 refresh_js=0
 
 embuijs_files='lib.js maker.js dyncss.js'
+embuicss_files='lib.js maker.js dyncss.js'
 
 # parse cmd options
 while getopts hft: OPT; do
