@@ -10,3 +10,4 @@ user_*.ini
 .travis.yml
 config.h
 etags.txt
+draft
