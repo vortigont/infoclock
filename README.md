@@ -21,11 +21,13 @@ __[РУССКАЯ ВЕРСИЯ](README.rus.md) | [BUILD](/doc/BUILD.md)__
 
 ### InfoClock WebUI Dashboard
 
-<img src="/doc/infoclock_embui01.png" alt="infoclock webui" width="50%"/><img src="/doc/infoclock_embui02.png" alt="infoclock webui" width="50%"/>
+<img src="/doc/infoclock_embui01.png" alt="infoclock webui" width="50%"/>
+<img src="/doc/infoclock_embui02.png" alt="infoclock webui" width="50%"/>
 
 ### InfoClock box/display
 
-<img src="/doc/infoclock1.jpg" alt="infoclock box" width="50%"/><img src="/doc/infoclock2.jpg" alt="infoclock box" width="50%"/>
+<img src="/doc/infoclock1.jpg" alt="infoclock box" width="50%"/>
+<img src="/doc/infoclock2.jpg" alt="infoclock box" width="50%"/>
 
 #### License
 
