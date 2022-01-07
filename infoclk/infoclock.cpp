@@ -181,10 +181,12 @@ void Infoclock::doSeconds() {
   matrix->reset();             // reset matrix to clear possible garbage
   matrix->setIntensity(_brt);	 // set screen brightness
   wscroll = (bool)_brt;		     // disable weather scroll at nights
-  matrix->fillScreen(LOW);		 // clear screen all screen (must be replaced to a clock region only)
+  //matrix->fillScreen(LOW);		 // clear screen all screen (must be replaced to a clock region only)
   bigClk();                    // print time on screen
-  LOG(print, ctime(TimeProcessor::getInstance().now()));     // print date/time to serial if debug
 
+  tDrawTicks.restartDelayed();  // redraw ticks due to cleared screen
+
+  LOG(print, ctime(TimeProcessor::getInstance().now()));     // print date/time to serial if debug
 
 /*
     if (wscroll){
