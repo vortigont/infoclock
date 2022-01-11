@@ -27,8 +27,10 @@ __[РУССКАЯ ВЕРСИЯ](README.rus.md) | [BUILD](/doc/BUILD.md)__
 ### InfoClock box/display
 
 <img src="/doc/infoclock1.jpg" alt="infoclock box" width="50%"/>
+
+Video demo
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=r6gi6vBOa_U" target="_blank"><img src="http://img.youtube.com/vi/r6gi6vBOa_U/0.jpg" 
-alt="InfoClock demo" width="240" height="180" border="10" /></a>
+alt="InfoClock demo" width="320" height="240" border="10" /></a>
 
 #### License
 
