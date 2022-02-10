@@ -225,7 +225,7 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 void block_page_sensors(Interface *interf, JsonObject *data){
 
     // if it was a form post, than update settings
-    if (data){
+    if (data && !(*data)[FPSTR(V_SN_UPD_RATE)].isNull() ){
         SETPARAM_NONULL(FPSTR(V_SN_TCOMP), informer.clksensor.tempoffset(embui.paramVariant(FPSTR(V_SN_TCOMP))));
         SETPARAM(FPSTR(V_SN_UPD_RATE), informer.snsupdrate(embui.paramVariant(FPSTR(V_W_UPD_TIME))));
     }
