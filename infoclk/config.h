@@ -1,5 +1,4 @@
 // Default options
-// rename this file to config.h and make your changes
 
 // Enable debug messages via hw serail port0
 // #define _FWDEBUG_
