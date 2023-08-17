@@ -11,10 +11,6 @@
 #include <ESP8266HTTPClient.h>
 #include <EmbUI.h>
 
-#ifdef USE_FTP
- #include "ftpSrv.h"
-#endif
-
 extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
 
 // Global Task Scheduler
@@ -57,20 +53,12 @@ void setup() {
     wver(request);
   });
 
-
-#ifdef USE_FTP
-    ftp_setup(); // запуск ftp-сервера
-#endif
 }
 
 
 // MAIN loop
 void loop() {
   embui.handle();
-
-#ifdef USE_FTP
-    ftp_loop(); // цикл обработки событий фтп-сервера
-#endif
 } // end of main loop
 
 
