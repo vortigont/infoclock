@@ -31,8 +31,9 @@ void create_parameters(){
      */
     embui.var_create(FPSTR(V_W_UPD_TIME), WEATHER_UPD_PERIOD);    // weather update, hours
     embui.var_create(FPSTR(V_W_UPD_RTR),  WEATHER_UPD_RETRY);	  // weather update retry, minutes
-    embui.var_create(FPSTR(V_MX_W),  MX_DEFAULT_W);
-    embui.var_create(FPSTR(V_MX_H),  MX_DEFAULT_H);
+    //embui.var_create(FPSTR(V_CNTRY), COUNTRY);                    // weather country
+    embui.var_create(FPSTR(V_MX_W),  MX_DEFAULT_W);               // matrix width
+    embui.var_create(FPSTR(V_MX_H),  MX_DEFAULT_H);               // matrix height
     embui.var_create(FPSTR(V_CSPIN), DEFAULT_CS_PIN);             // SPI CS pin
 
     /**
@@ -153,8 +154,9 @@ void block_page_weather(Interface *interf, JsonObject *data){
     interf->spacer(FPSTR(C_DICT[lang][CD::WthNote]));       // Weather setup Note
 
     interf->text(FPSTR(V_WAPI_KEY), FPSTR(C_DICT[lang][CD::WAPIKEY]));              // weather API-key
+    interf->text(FPSTR(V_CNTRY),        FPSTR(C_DICT[lang][CD::cntry]));            // Country code
     interf->text(FPSTR(V_WAPI_CITY_ID), FPSTR(C_DICT[lang][CD::WthCID]));           // city-id for weather API
-    interf->text(FPSTR(V_WAPI_CITY_NAME), FPSTR(C_DICT[lang][CD::WthSrtName]));     // city short name
+    interf->text(FPSTR(V_SHORT_NAME), FPSTR(C_DICT[lang][CD::WthSrtName]));     // city short name
 
     interf->number(FPSTR(V_W_UPD_TIME), F("интервал обновления, ч."));          // weather update, hours
     interf->number(FPSTR(V_W_UPD_RTR), F("повтор при ошибке, мин."));            // weather update, minutes
@@ -272,7 +274,7 @@ void set_weather(Interface *interf, JsonObject *data){
     // сохраняем параметры настроек погоды
     SETPARAM_NONULL(FPSTR(V_WAPI_KEY));
     SETPARAM_NONULL(FPSTR(V_WAPI_CITY_ID));
-    SETPARAM_NONULL(FPSTR(V_WAPI_CITY_NAME));
+    SETPARAM_NONULL(FPSTR(V_SHORT_NAME));
     SETPARAM(FPSTR(V_W_UPD_TIME));
     SETPARAM(FPSTR(V_W_UPD_RTR));
  

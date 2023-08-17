@@ -36,6 +36,7 @@
 
 // weather API URL
 // http://api.openweathermap.org/data/2.5/weather?id=519690&units=metric&lang=ru&APPID=<id>
+// City-id list: http://bulk.openweathermap.org/sample/
 static const char PGwapireq1[] PROGMEM = WAPI_URL "?id=";
 static const char PGwapireq2[] PROGMEM = "&units=metric&lang=" COUNTRY "&APPID=";   // WAPI_KEY;
 

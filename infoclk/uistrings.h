@@ -11,9 +11,11 @@ static const char T_HEADLINE[] PROGMEM = "ИнфоЧасики";    // имя п
 // Weather
 static const char V_WAPI_KEY[] = "w_ak";                // API key for OpenWeather
 static const char V_WAPI_CITY_ID[] = "w_cid";           // Новороссийск - 518255, Санкт-Петербург - "519690"
-static const char V_WAPI_CITY_NAME[] = "w_csn";	        // Короткое имя города для дисплея
+static const char V_WAPI_CITY_NAME[] = "w_city";        // city name
 static const char V_W_UPD_TIME[] = "w_up_h";	        // weather update, hours
 static const char V_W_UPD_RTR[] = "w_up_r";	            // weather update, minutes
+static const char V_CNTRY[] = "w_cntry";                // country
+static const char V_SHORT_NAME[] = "w_csn";	            // Короткое имя города для дисплея
 
 // Matrix control
 static const char V_MX_W[]  = "mx_w";	                // Matrix WIDTH (number of 8x8 MAX modules)

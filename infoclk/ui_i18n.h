@@ -24,7 +24,8 @@ enum CD : uint8_t {
     WthCID,
     WthSrtName,
     mtx,
-    snsrs
+    snsrs,
+    cntry
 };
 
 
@@ -46,6 +47,8 @@ static const char T_EN_Weather_cid[] PROGMEM = "City-ID. Pls, find City-ID at ht
 static const char T_RU_Weather_cid[] PROGMEM = "Код города. Найдите код города на https://openweathermap.org/current";
 static const char T_EN_Weather_shname[] PROGMEM = "short name for city in output string (optional)";
 static const char T_RU_Weather_shname[] PROGMEM = "короткое имя города в строке вывода (опционально)";
+static const char T_EN_Weather_cntry[] PROGMEM = "Contry code";
+static const char T_RU_Weather_cntry[] PROGMEM = "Код страны";
 
 
 static const char T_EN_OPT_Weath[] PROGMEM = "Настройки погоды";
@@ -78,7 +81,8 @@ static const char *const C_DICT[][UI_DICT_SIZE] PROGMEM = {
     T_RU_Weather_cid,
     T_RU_Weather_shname,
     T_RU_Matrix,
-    T_RU_Sensors
+    T_RU_Sensors,
+    T_RU_Weather_cntry
   },
 // Index 1 - English lang
   { T_EN_Clock,
@@ -91,6 +95,7 @@ static const char *const C_DICT[][UI_DICT_SIZE] PROGMEM = {
     T_EN_Weather_cid,
     T_EN_Weather_shname,
     T_EN_Matrix,
-    T_EN_Sensors
+    T_EN_Sensors,
+    T_EN_Weather_cntry
   }
 };
