@@ -1,13 +1,10 @@
 lib/
-*.bin
-*.orig
+.vscode/
+data/config.*
 user_*.ini
 .pio
-.pioenvs
-.piolibdeps
 .clang_complete
 .gcc-flags.json
 .travis.yml
-config.h
 etags.txt
 draft
