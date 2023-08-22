@@ -10,7 +10,12 @@
 // Libs
 #include <Adafruit_GFX.h>	// need to override bundled "glcdfont.c" font with cyr version
 #include <Max72xxPanel.h>
+#if defined ESP8266
 #include <ESP8266HTTPClient.h>
+#elif defined ESP32 
+#include <HTTPClient.h>
+#endif
+
 #include "sensors.h"
 
 

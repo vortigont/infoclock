@@ -8,7 +8,11 @@
 #include "main.h"
 #include "infoclock.h"
 
+#if defined ESP8266
 #include <ESP8266HTTPClient.h>
+#elif defined ESP32 
+#include <HTTPClient.h>
+#endif
 #include <EmbUI.h>
 
 extern "C" int clock_gettime(clockid_t unused, struct timespec *tp);
@@ -82,11 +86,33 @@ void wver(AsyncWebServerRequest *request) {
   timespec tp;
   clock_gettime(0, &tp);
 
+  uint32_t chipId = 0;
+#if defined ESP8266
+		chipId = ESP.getChipId(),
+#elif defined ESP32
+    // emulate getChipId() like in 8266
+		for(int i=0; i<17; i=i+8) {
+	    chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+	  }
+#endif
+
+
+
   snprintf_P(buff, sizeof(buff), PGverjson,
-		ESP.getChipId(),
+    chipId,
 		ESP.getFlashChipSize(),
+#if defined ESP8266
 		ESP.getCoreVersion().c_str(),
+#elif defined ESP32
+    "n/a",
+#endif
+
+#if defined ESP8266
 		system_get_sdk_version(),
+#elif defined ESP32
+    ESP.getSdkVersion(),
+#endif
+
 #ifdef GIT_REV
     GIT_REV,
 #else

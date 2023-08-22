@@ -20,13 +20,13 @@
 #include <BME280I2C.h>       //https://github.com/finitespace/BME280
 
 //Si7021 secsor
-#include <HTU21D.h>
+#include <HTU2xD_SHT2x_Si70xx.h>
 
 // SGP30 gas sensor
 #include <SparkFun_SGP30_Arduino_Library.h>
 
 BME280I2C s_bme;
-HTU21D s_si7021(HTU21D_RES_RH12_TEMP14);
+HTU2xD_SHT2x_SI70xx s_si7021(SI702x_SENSOR, HUMD_12BIT_TEMP_14BIT);
 SGP30 sgp30;
 
 /**
@@ -76,12 +76,12 @@ void Sensors::readbme280(float& t, float& h, float& p, float& dew) {
 void Sensors::readsi7021(float& t, float& h) {
   h = s_si7021.readHumidity();
   // try to reset sensor on read error
-  if ( h == 255.0 ){
+  if ( h == HTU2XD_SHT2X_SI70XX_ERROR ){
     s_si7021.softReset();
-    s_si7021.setResolution(HTU21D_RES_RH12_TEMP14);
+    s_si7021.setResolution(HUMD_12BIT_TEMP_14BIT);
   }
 
-  t = s_si7021.readTemperature(SI70xx_TEMP_READ_AFTER_RH_MEASURMENT);
+  t = s_si7021.readTemperature(READ_TEMP_AFTER_RH);
 }
 
 // Update string with sensor's data
