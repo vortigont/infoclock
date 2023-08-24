@@ -35,7 +35,11 @@ void setup() {
   embui.begin();
 
   // read matrix w,h,cs from config and initialize object
+#ifdef ESP32
+  informer.init(embui.paramVariant(FPSTR(V_MX_W)), embui.paramVariant(FPSTR(V_MX_H)), embui.paramVariant(V_CLKPIN), embui.paramVariant(V_DATAPIN), embui.paramVariant(V_CSPIN));
+#else
   informer.init(embui.paramVariant(FPSTR(V_MX_W)), embui.paramVariant(FPSTR(V_MX_H)), embui.paramVariant(FPSTR(V_CSPIN)));
+#endif
 
   // restore display and modules orientation from config
   informer.mxPaneSetup(

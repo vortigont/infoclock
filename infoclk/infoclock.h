@@ -20,7 +20,9 @@
 
 
 // Matrix setup
-#ifndef DEFAULT_CS_PIN
+#ifdef ESP32
+#define DEFAULT_CS_PIN  -1
+#else
 #define DEFAULT_CS_PIN  16      // SPI CS pin D0 on WeMos D1 Mini board
 #endif
 
@@ -51,7 +53,7 @@ public:
     /**
      * constructor declaraion
      */
-    Infoclock();
+    Infoclock(){};
 
     /**
      * @brief Destroy the Infoclock object
@@ -67,10 +69,20 @@ public:
 
     /** @brief init - initialize Informer object, create dynamic valuies and objects
      * 
-     *  @param _x - display panel dimensions, absolute width
-     *  @param _y - display panel dimensions, absolute height
+     *  @param w - display panel dimensions, absolute width
+     *  @param h - display panel dimensions, absolute height
      */
-    void init(const int16_t _x, const int16_t _y, const uint8_t cs_pin = DEFAULT_CS_PIN);
+    void init(int16_t w, int16_t h, uint8_t cs_pin = DEFAULT_CS_PIN);
+
+    /** @brief init - initialize Informer object, create dynamic valuies and objects
+     * 
+     *  @param w - display panel dimensions, absolute width
+     *  @param h - display panel dimensions, absolute height
+     *  @param clk - SPI clock pin
+     *  @param data - SPI data out pin
+     *  @param cs - SPI chip select pin
+     */
+    void init(int16_t w, int16_t h, int8_t clk, int8_t data, int8_t cs);
 
     /** @brief onNetIfUp - коллбек для внешнего события "сеть доступна"
      * 
@@ -145,6 +157,7 @@ private:
     Task tSecondsPulse;
     Task tDrawTicks;
 
+    void _setup(int16_t _x, int16_t _y);          // basic display and tasks setup
     void doSeconds();		// every second pulse task (tSecondsPulse)
     void bigClk ();			// Draw clock with big font
     void sectick(uint16_t x, uint16_t y);	// Draw seconds ticks
@@ -159,7 +172,7 @@ private:
     // set panel dimensions
     void setDimensions(const int16_t _x, const int16_t _y){
         // I do not need negatives here
-        if (_x && _y){
+        if (_x >0 && _y > 0){
             w = _x; h = _y;
         }
     }

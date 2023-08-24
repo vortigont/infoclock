@@ -42,25 +42,35 @@ static const char PGwapireq2[] PROGMEM = "&units=metric&lang=" COUNTRY "&APPID="
 
 
 // Informer class constructor
-Infoclock::Infoclock() : w(DEFAULT_DIM_X), h(DEFAULT_DIM_Y) {
+//Infoclock::Infoclock() : w(DEFAULT_DIM_X), h(DEFAULT_DIM_Y) {}
 
+void Infoclock::init(const int16_t w, const int16_t h, const uint8_t cs_pin){
+  // create display object
+  matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(cs_pin, w, h));
+  if (!matrix)
+    return;
+
+  _setup(w, h);
 }
 
+#ifdef ESP32
+void Infoclock::init(int16_t w, int16_t h, int8_t clk, int8_t data, int8_t cs){
+  // create display object
+  matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(w, h, clk, data, cs));
+  if (!matrix)
+    return;
+
+  _setup(w, h);
+}
+#endif
 
 /** @brief init - initialize Informer object, create dynamic valuies and objects
  * 
  *  @param _x - display panel dimensions, absolute width
  *  @param _y - display panel dimensions, absolute height
  */
-void Infoclock::init(const int16_t _x, const int16_t _y, const uint8_t cs_pin){
+void Infoclock::_setup(int16_t _x, int16_t _y){
   setDimensions(_x, _y);
-
-  tape=String(F("Connecting to WiFi..."));
-  // create display object
-  matrix = std::unique_ptr<Max72xxPanel>(new Max72xxPanel(cs_pin, w, h));
-
-  if (!matrix)
-    return;
 
   //matrix->setFont(&TomThumb);
   //matrix->setFont(&FreeMono9pt7b);

@@ -8,8 +8,9 @@
 // статический класс с готовыми формами для базовых системных натсроек
 #include "basicui.h"
 
-#define CS_MIN 0
-#define CS_MAX 16
+#ifndef NUM_OUPUT_PINS
+#define NUM_OUPUT_PINS  16      // for esp8266
+#endif
 
 //uint8_t lang = LANG::RU;   // default language for text resources
 
@@ -35,6 +36,10 @@ void create_parameters(){
     embui.var_create(FPSTR(V_MX_W),  MX_DEFAULT_W);               // matrix width
     embui.var_create(FPSTR(V_MX_H),  MX_DEFAULT_H);               // matrix height
     embui.var_create(FPSTR(V_CSPIN), DEFAULT_CS_PIN);             // SPI CS pin
+#ifdef ESP32
+    embui.var_create(FPSTR(V_CLKPIN), -1);
+    embui.var_create(FPSTR(V_DATAPIN), -1);
+#endif
 
     /**
      * обработчики действий
@@ -178,8 +183,13 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 
     interf->range(F("brt"), informer.brightness(), 0, 15, 1, F("яркость"), true);
 
-    interf->number(FPSTR(V_CSPIN), F("SPI CS pin"), 1, CS_MIN, CS_MAX);
-    interf->comment(F("Changing CS pin requires MCU reboot"));
+#ifdef ESP32
+    interf->number(FPSTR(V_CLKPIN), F("SPI CLK pin"), 1, -1, NUM_OUPUT_PINS);
+    interf->number(FPSTR(V_DATAPIN), F("SPI DATA pin"), 1, -1, NUM_OUPUT_PINS);
+#endif
+    interf->number(FPSTR(V_CSPIN), F("SPI CS pin"), 1, -1, NUM_OUPUT_PINS);
+
+    interf->comment(F("Changing pins requires MCU reboot"));
     interf->spacer();
 
     interf->json_section_line(FPSTR(A_SET_MATRIX));
@@ -291,10 +301,11 @@ void set_matrix(Interface *interf, JsonObject *data){
     if (!data) return;
 
     // save cs pin to cfg
-    uint8_t cs = (*data)[FPSTR(V_CSPIN)].as<unsigned short>();
-    if (cs >= CS_MIN && cs <= CS_MAX && cs < 6 && cs >11){
-        SETPARAM(FPSTR(V_CSPIN));
-    }
+#ifdef ESP32
+    SETPARAM(FPSTR(V_CLKPIN));
+    SETPARAM(FPSTR(V_DATAPIN));
+#endif
+    SETPARAM(FPSTR(V_CSPIN));
 
     SETPARAM(FPSTR(V_MX_W));
     SETPARAM(FPSTR(V_MX_H));

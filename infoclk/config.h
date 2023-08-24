@@ -3,7 +3,6 @@
 // Enable debug messages via hw serail port0
 // #define _FWDEBUG_
 
-
 // NTP Options
 #define COUNTRY "ru"           // Country double-letter code
 
