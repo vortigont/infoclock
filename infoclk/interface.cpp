@@ -16,6 +16,9 @@
 
 extern Infoclock informer;
 
+// fwd declaration
+void set_gpio(Interface *interf, JsonObject *data);
+
 /**
  * Define configuration variables and controls handlers
  * variables has literal names and are kept within json-configuration file on flash
@@ -63,6 +66,7 @@ void create_parameters(){
     embui.section_handle_add(FPSTR(A_SET_WEATHER), set_weather);            // save weather settings
     embui.section_handle_add(FPSTR(A_SET_MATRIX),  set_matrix);             // save matrix settings
     embui.section_handle_add("mxreset", ui_mx_reset);                       // сброс матрицы
+    embui.section_handle_add(FPSTR(A_SET_GPIO),    set_gpio);               // set SPI gpio for esp32
 }
 
 
@@ -183,13 +187,17 @@ void block_page_matrix(Interface *interf, JsonObject *data){
 
     interf->range(F("brt"), informer.brightness(), 0, 15, 1, F("яркость"), true);
 
-#ifdef ESP32
-    interf->number(FPSTR(V_CLKPIN), F("SPI CLK pin"), 1, -1, NUM_OUPUT_PINS);
-    interf->number(FPSTR(V_DATAPIN), F("SPI DATA pin"), 1, -1, NUM_OUPUT_PINS);
-#endif
-    interf->number(FPSTR(V_CSPIN), F("SPI CS pin"), 1, -1, NUM_OUPUT_PINS);
+    interf->json_section_line(FPSTR(A_SET_GPIO));
+    #ifdef ESP32
+        interf->number(FPSTR(V_CLKPIN), F("SPI CLK pin"), 1, -1, NUM_OUPUT_PINS);
+        interf->number(FPSTR(V_DATAPIN), F("SPI DATA pin"), 1, -1, NUM_OUPUT_PINS);
+    #endif
+        interf->number(FPSTR(V_CSPIN), F("SPI CS pin"), 1, -1, NUM_OUPUT_PINS);
 
+    interf->json_section_end();     // end of line
     interf->comment(F("Changing pins requires MCU reboot"));
+    interf->button_submit(FPSTR(A_SET_GPIO), FPSTR(T_DICT[lang][TD::D_SAVE]), "blue");
+
     interf->spacer();
 
     interf->json_section_line(FPSTR(A_SET_MATRIX));
@@ -300,13 +308,6 @@ void set_weather(Interface *interf, JsonObject *data){
 void set_matrix(Interface *interf, JsonObject *data){
     if (!data) return;
 
-    // save cs pin to cfg
-#ifdef ESP32
-    SETPARAM(FPSTR(V_CLKPIN));
-    SETPARAM(FPSTR(V_DATAPIN));
-#endif
-    SETPARAM(FPSTR(V_CSPIN));
-
     SETPARAM(FPSTR(V_MX_W));
     SETPARAM(FPSTR(V_MX_H));
     SETPARAM_NONULL(FPSTR(V_MX_VF));
@@ -322,6 +323,24 @@ void set_matrix(Interface *interf, JsonObject *data){
     );
 
     if(interf) block_page_matrix(interf, nullptr);
+}
+
+/**
+ *  Apply matrix-related options 
+ */
+void set_gpio(Interface *interf, JsonObject *data){
+    if (!data) return;
+
+    // save cs pin to cfg
+#ifdef ESP32
+    SETPARAM_NONULL(FPSTR(V_CLKPIN));
+    SETPARAM_NONULL(FPSTR(V_DATAPIN));
+#endif
+    SETPARAM_NONULL(FPSTR(V_CSPIN));
+
+    embui.autosave(true);
+    if(interf) block_page_matrix(interf, nullptr);
+    if(interf) basicui::set_reboot(interf, nullptr);    // reboot MCU
 }
 
 

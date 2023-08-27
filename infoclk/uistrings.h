@@ -46,6 +46,7 @@ static const char B_SENSORS[] PROGMEM = "b_sns";
 static const char A_UPD_WEATHER[] PROGMEM = "a_updw";       //  weather data refresh
 static const char A_SET_WEATHER[] PROGMEM = "a_setwth";     //  weather settings set 
 static const char A_SET_MATRIX[] PROGMEM = "a_setmx";       //  Matrix settings set 
+static const char A_SET_GPIO[] PROGMEM = "a_setgpio";       //  Matrix gpio settings set 
 
 
 // other constants
